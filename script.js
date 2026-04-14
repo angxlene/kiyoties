@@ -26,7 +26,6 @@ const kiyoSongs = [
 
 const TOTAL_SONGS = kiyoSongs.length;
 
-// Initialization to make the app completely dynamic based on song count
 window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ui-total-1').innerText = TOTAL_SONGS;
     document.getElementById('ui-total-2').innerText = TOTAL_SONGS;
@@ -104,7 +103,6 @@ document.querySelectorAll('.nav-home').forEach(btn => {
     });
 });
 
-// --- SECRET DEV TOOL: Clear Leaderboard & Device Lock ---
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.altKey && e.code === 'KeyD') {
         const confirmClear = confirm("DEV TOOL: Clear the leaderboard and device lock?");
@@ -336,7 +334,7 @@ const canvas = document.getElementById('result-canvas');
 const ctx = canvas.getContext('2d');
 const frameImage = document.getElementById('frame');
 const startBtn = document.getElementById('start-btn');
-const downloadBtn = document.getElementById('download-btn');
+const saveBtn = document.getElementById('save-btn'); 
 const countdownDisplay = document.getElementById('countdown-display');
 const posePrompt = document.getElementById('pose-prompt');
 const flash = document.getElementById('flash');
@@ -349,20 +347,6 @@ const photoWidth = 920;
 const photoHeight = 473; 
 const photoX = 80;       
 const positions = [290, 773, 1256];
-
-// The 10 lyric-inspired photobooth pose sets
-const poseSets = [
-    ["Pose 1: 'Hanap ko na ngiti mo' 😁", "Pose 2: The 'Tulo Laway' sleepyhead 😴", "Pose 3: Reaching out ('Hawakan mo kamay ko') 🫴"],
-    ["Pose 1: The Secret ('Baka mabunyag') 🤫", "Pose 2: 'Nakatunganga sa bintana' 🪟", "Pose 3: 'Komedya' big laugh 😆"],
-    ["Pose 1: 'Tagutaguan' hiding face 🫣", "Pose 2: 'Trahedya' dramatic pout 🥺", "Pose 3: 'Sakay sa kalesa' looking far 🐎"],
-    ["Pose 1: Hugging yourself ('Gabing malamig') 🥶", "Pose 2: 'Sinangla pati puso' finger heart 🫰", "Pose 3: Confident stare ('Palaban') 🤨"],
-    ["Pose 1: 'Pangakong paraiso' looking up ✨", "Pose 2: Wiping the 'tulo laway' 🤤", "Pose 3: 'Hindi maipinta' art pose 🖼️"],
-    ["Pose 1: 'Kumportable' relaxed lean 🛋️", "Pose 2: 'Kumakabog na damdamin' hand on chest 💓", "Pose 3: The 'Lihim' wink 😉"],
-    ["Pose 1: 'Walang makakaalam' covering camera 🖐️", "Pose 2: 'Abot langit' pointing up ☝️", "Pose 3: 'Wag kang bibitaw' holding hands out 🤝"],
-    ["Pose 1: 'Una kong tikim' lip bite 🫦", "Pose 2: 'Mga matang papikit' closing eyes 😌", "Pose 3: 'Lintik na tinginan' intense eye contact 👀"],
-    ["Pose 1: 'Masaya sa naranasan' genuine smile 😊", "Pose 2: 'Kahit walang sabihin' zip the lips 🤐", "Pose 3: 'Ikaw ang makakasama' pointing at lens 🫵"],
-    ["Pose 1: 'Nakahilata sa kama' hands behind head 🛌", "Pose 2: 'Daig pa ang nagcasino' throwing dice 🎲", "Pose 3: 'Binuklat bagong libro' reading a book 📖"]
-];
 
 let photoCounter = 1; 
 
@@ -404,18 +388,18 @@ async function runCountdown() {
 
 startBtn.addEventListener('click', async () => {
     startBtn.disabled = true; 
-    downloadBtn.style.display = 'none'; 
+    saveBtn.style.display = 'none'; 
+    startBtn.classList.remove('secondary'); 
+    
     posePrompt.style.opacity = 1; videoWrapper.classList.remove('idle-border');
     document.getElementById('idle-container').style.opacity = '0';
 
     ctx.fillStyle = "#0f0c1b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
     if(frameImage.complete && frameImage.naturalHeight !== 0) ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
 
-    // Pick a random pose set for this session
-    const currentPoseMessages = poseSets[Math.floor(Math.random() * poseSets.length)];
-
     for (let i = 0; i < 3; i++) {
-        posePrompt.innerText = currentPoseMessages[i]; await runCountdown();
+        posePrompt.innerText = `📸 Photo ${i + 1} of 3`; 
+        await runCountdown();
         
         ctx.save(); ctx.translate(photoX + photoWidth, positions[i]); ctx.scale(-1, 1); 
         drawVideoCover(ctx, video, 0, 0, photoWidth, photoHeight); ctx.restore();
@@ -441,14 +425,17 @@ startBtn.addEventListener('click', async () => {
     
     await autoSaveRoutine();
 
-    startBtn.innerText = "Retake Photos"; startBtn.disabled = false;
+    startBtn.innerText = "🔄 Retake"; 
+    startBtn.classList.add('secondary'); 
+    startBtn.disabled = false;
+    
     videoWrapper.classList.add('idle-border'); document.getElementById('idle-container').style.opacity = '1';
     
-    downloadBtn.style.display = 'inline-block'; 
+    saveBtn.style.display = 'inline-block'; 
 });
 
 async function autoSaveRoutine() {
-    printingOverlay.style.display = 'flex'; document.getElementById('printing-text').innerText = "Developing polaroid...";
+    printingOverlay.style.display = 'flex'; document.getElementById('printing-text').innerText = "Certified Kiyotie energy...";
     progressFill.style.transition = 'none'; progressFill.style.width = '0%';
     
     setTimeout(() => { progressFill.style.transition = 'width 2s linear'; progressFill.style.width = '100%'; }, 50);
@@ -463,9 +450,18 @@ function triggerStandardDownload(filename) {
     const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png'); link.click();
 }
 
-downloadBtn.addEventListener('click', () => { 
+saveBtn.addEventListener('click', () => { 
     triggerStandardDownload(getFilename()); 
     photoCounter++; 
+    
+    const originalText = saveBtn.innerText;
+    saveBtn.innerText = "✅ Saved!";
+    saveBtn.classList.add('saved-state');
+    
+    setTimeout(() => {
+        saveBtn.innerText = originalText;
+        saveBtn.classList.remove('saved-state');
+    }, 2500);
 });
 
 function drawInitialFrame() {
@@ -476,7 +472,7 @@ frameImage.onload = drawInitialFrame; drawInitialFrame();
 
 const modal = document.getElementById("preview-modal");
 canvas.addEventListener("click", () => {
-    if (!startBtn.disabled && startBtn.innerText === "Retake Photos") {
+    if (!startBtn.disabled && startBtn.innerText === "🔄 Retake") {
         modal.style.display = "flex"; document.getElementById("modal-image").src = canvas.toDataURL('image/png');
     }
 });
@@ -486,7 +482,7 @@ modal.addEventListener("click", (e) => { if (e.target === modal) modal.style.dis
 document.addEventListener('keydown', (event) => {
     if(screens.photobooth.classList.contains('active')) {
         if (event.code === 'Space') { event.preventDefault(); if (!startBtn.disabled) startBtn.click(); }
-        if (event.code === 'KeyS' && downloadBtn.style.display !== 'none') downloadBtn.click();
+        if (event.code === 'KeyS' && saveBtn.style.display !== 'none') saveBtn.click();
     }
     if (event.code === 'Escape' && modal.style.display === "flex") modal.style.display = "none";
 });

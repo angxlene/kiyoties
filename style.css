@@ -166,6 +166,34 @@ h1 {
 .close-modal { position: absolute; top: 20px; right: 30px; color: var(--text-light); font-size: 50px; cursor: pointer; transition: 0.2s;}
 .close-modal:hover { color: var(--primary-pink); }
 
+/* --- NEW CSS FOR BUTTON GROUP & SAVE UX --- */
+.button-group {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap; /* Helps on mobile */
+}
+
+/* Distinctive Save Button */
+.fan-btn.save-action {
+    background: #00e676; /* Bright success green */
+    color: #121212;
+    box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+}
+.fan-btn.save-action:hover {
+    background: #00c853;
+}
+
+/* Visual state applied via JS when clicked */
+.fan-btn.save-action.saved-state {
+    background: #121212;
+    color: #00e676;
+    border: 2px solid #00e676;
+    box-shadow: none;
+    transform: scale(0.98);
+}
+
 @media (max-width: 768px) {
     .layout { flex-direction: column; height: auto; justify-content: flex-start; }
     .camera-section { max-width: 100%; }
