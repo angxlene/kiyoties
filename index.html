@@ -24,7 +24,7 @@
                 <button id="nav-game" class="menu-card game-card">
                     <span class="emoji">⏱️</span>
                     <h2>Ultimate Fan Challenge</h2>
-                    <p>Guess all 16 Kiyo tracks. One try per device!</p>
+                    <p>Guess all <span id="ui-total-1"></span> Kiyo tracks. One try per device!</p>
                 </button>
             </div>
         </div>
@@ -63,7 +63,7 @@
             </div>
 
             <div id="game-play-panel" style="display: none;">
-                <div class="score-board">Score: <span id="current-score">0</span>/16</div>
+                <div class="score-board">Score: <span id="current-score">0</span>/<span id="ui-total-2"></span></div>
                 <div class="time-board">Total Time: <span id="total-time-display">0.00</span>s</div>
                 
                 <div class="audio-visualizer" id="visualizer">
@@ -83,7 +83,7 @@
 
             <div id="game-over-panel" style="display: none;">
                 <h2>Challenge Complete! 🎤</h2>
-                <p>Correct Answers: <span id="final-score" style="color: var(--primary-pink); font-weight:bold; font-size: 1.5rem;">0</span>/16</p>
+                <p>Correct Answers: <span id="final-score" style="color: var(--primary-pink); font-weight:bold; font-size: 1.5rem;">0</span>/<span id="ui-total-3"></span></p>
                 <p>Total Guess Time: <span id="final-time" style="color: var(--accent-silver); font-weight:bold;">0.00</span>s</p>
                 <p style="margin-top:20px;">Your score has been locked into the leaderboard.</p>
                 <button id="return-hub-btn" class="fan-btn nav-home" style="margin-top: 15px;">Return to Hub</button>
@@ -106,14 +106,7 @@
                         <div id="pose-prompt">Get Ready!</div>
                         <video id="video" autoplay playsinline></video>
                         
-                        <div id="idle-container">
-                            <div class="floating-icons">
-                                <div class="float-icon i1">🎵</div>
-                                <div class="float-icon i2">🎤</div>
-                                <div class="float-icon i3">✨</div>
-                                <div class="float-icon i4">🫶</div>
-                            </div>
-                        </div>
+                        <div id="idle-container"></div>
 
                         <img id="snap-temp" src="" style="display: none;" alt="">
                         <div id="flash"></div>

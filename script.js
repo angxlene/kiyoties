@@ -1,3 +1,38 @@
+// ==========================================
+// --- GLOBAL DATA ---
+// ==========================================
+const kiyoSongs = [
+    { id: 1, title: "Urong Sulong", src: "audio/urong_sulong.mp3" },
+    { id: 2, title: "Eba", src: "audio/eba.mp3" },
+    { id: 3, title: "Isa Lang", src: "audio/isa_lang.mp3" },
+    { id: 4, title: "Dantay", src: "audio/dantay.mp3" },
+    { id: 5, title: "Hey", src: "audio/hey.mp3" },
+    { id: 6, title: "Puyat", src: "audio/puyat.mp3" },
+    { id: 7, title: "Pambihira", src: "audio/pambihira.mp3" },
+    { id: 8, title: "Comeback", src: "audio/comeback.mp3" },
+    { id: 9, title: "Ikaw Lang", src: "audio/ikaw_lang.mp3" },
+    { id: 10, title: "Padayon", src: "audio/padayon.mp3" },
+    { id: 11, title: "TULO LAWAY", src: "audio/tulo_laway.mp3" },
+    { id: 12, title: "Okay lang yan", src: "audio/okay_lang_yan.mp3" },
+    { id: 13, title: "HANAP", src: "audio/hanap.mp3" },
+    { id: 14, title: "Eroplanong Papel", src: "audio/eroplanong_papel.mp3" },
+    { id: 15, title: "SHINEBOI", src: "audio/shineboi.mp3" },
+    { id: 16, title: "not even her", src: "audio/not_even_her.mp3" },
+    { id: 17, title: "Hanggang Kailan", src: "audio/hanggang_kailan.mp3" },
+    { id: 18, title: "MALAKAS ", src: "audio/malakas.mp3" },
+    { id: 19, title: "LALA", src: "audio/lala.mp3" },
+    { id: 20, title: "Bangkok Freestyle", src: "audio/bangkok_freestyle.mp3" },
+];
+
+const TOTAL_SONGS = kiyoSongs.length;
+
+// Initialization to make the app completely dynamic based on song count
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('ui-total-1').innerText = TOTAL_SONGS;
+    document.getElementById('ui-total-2').innerText = TOTAL_SONGS;
+    document.getElementById('ui-total-3').innerText = TOTAL_SONGS;
+});
+
 // --- Navigation & Core Logic ---
 const screens = {
     home: document.getElementById('home-screen'),
@@ -5,13 +40,46 @@ const screens = {
     photobooth: document.getElementById('photobooth-screen')
 };
 
+// --- Photobooth Audio Logic ---
+let pbPlaylist = [];
+let pbAudio = null;
+
+function playPhotoboothMusic() {
+    if (pbAudio) return; 
+
+    if (pbPlaylist.length === 0) {
+        pbPlaylist = [...kiyoSongs].sort(() => 0.5 - Math.random());
+    }
+    
+    const song = pbPlaylist.pop();
+    pbAudio = new Audio(song.src);
+    pbAudio.volume = 0.5; 
+    
+    pbAudio.play().catch(e => console.log("Audio autoplay blocked by browser:", e));
+
+    pbAudio.addEventListener('ended', () => {
+        pbAudio = null; 
+        playPhotoboothMusic(); 
+    });
+}
+
+function stopPhotoboothMusic() {
+    if (pbAudio) {
+        pbAudio.pause();
+        pbAudio.currentTime = 0;
+        pbAudio = null;
+    }
+}
+
 function showScreen(screenName) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
     screens[screenName].classList.add('active');
     
     if(screenName === 'photobooth') {
         startCamera();
+        playPhotoboothMusic();
     } else {
+        stopPhotoboothMusic();
         if(video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
             video.srcObject = null;
@@ -37,7 +105,6 @@ document.querySelectorAll('.nav-home').forEach(btn => {
 });
 
 // --- SECRET DEV TOOL: Clear Leaderboard & Device Lock ---
-// Press Ctrl + Alt + D at any time to trigger this!
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.altKey && e.code === 'KeyD') {
         const confirmClear = confirm("DEV TOOL: Clear the leaderboard and device lock?");
@@ -50,28 +117,9 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-
 // ==========================================
-// --- 3-SECOND SONG CHALLENGE LOGIC ---
+// --- SONG CHALLENGE LOGIC ---
 // ==========================================
-const kiyoSongs = [
-    { id: 1, title: "Urong Sulong", src: "audio/urong_sulong.mp3" },
-    { id: 2, title: "Eba", src: "audio/eba.mp3" },
-    { id: 3, title: "Isa Lang", src: "audio/isa_lang.mp3" },
-    { id: 4, title: "Dantay", src: "audio/dantay.mp3" },
-    { id: 5, title: "Hey", src: "audio/hey.mp3" },
-    { id: 6, title: "Puyat", src: "audio/puyat.mp3" },
-    { id: 7, title: "Pambihira", src: "audio/pambihira.mp3" },
-    { id: 8, title: "Comeback", src: "audio/comeback.mp3" },
-    { id: 9, title: "Ikaw Lang", src: "audio/ikaw_lang.mp3" },
-    { id: 10, title: "Padayon", src: "audio/padayon.mp3" },
-    { id: 11, title: "TULO LAWAY", src: "audio/tulo_laway.mp3" },
-    { id: 12, title: "Okay lang yan", src: "audio/okay_lang_yan.mp3" },
-    { id: 13, title: "HANAP", src: "audio/hanap.mp3" },
-    { id: 14, title: "Eroplanong Papel", src: "audio/eroplanong_papel.mp3" },
-    { id: 15, title: "SHINEBOI", src: "audio/shineboi.mp3" },
-    { id: 16, title: "not even her", src: "audio/not_even_her.mp3" },
-];
 
 let currentScore = 0;
 let totalTimeMs = 0;
@@ -103,7 +151,6 @@ const scoreDisplay = document.getElementById('current-score');
 const totalTimeDisplay = document.getElementById('total-time-display');
 const leaderboardList = document.getElementById('leaderboard-list');
 
-// -- Check if played --
 function checkDevicePlayedStatus() {
     const hasPlayed = localStorage.getItem('kiyotiePlayed');
     if (hasPlayed === "true") {
@@ -116,14 +163,12 @@ function checkDevicePlayedStatus() {
     loadLeaderboard();
 }
 
-// -- Leaderboard Logic --
 function loadLeaderboard() {
     let board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || [];
     leaderboardList.innerHTML = '';
     if(board.length === 0) {
         leaderboardList.innerHTML = '<li>No challengers yet! Be the first!</li>';
     } else {
-        // Sort primarily by Score (Descending) then by Total Time (Ascending - Faster is better)
         board.sort((a,b) => {
             if (b.score !== a.score) return b.score - a.score;
             return a.time - b.time;
@@ -132,13 +177,12 @@ function loadLeaderboard() {
                 <li>
                     <span class="lb-rank">#${i+1}</span>
                     <span class="lb-name">${entry.name}</span> 
-                    <span class="lb-stats"><span>${entry.score}</span>/16 in <span>${entry.time}s</span></span>
+                    <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
                 </li>`;
         });
     }
 }
 
-// -- Button Listeners --
 startBtnGame.addEventListener('click', () => {
     gameStartPanel.style.display = 'none';
     instructionsPanel.style.display = 'block';
@@ -166,13 +210,11 @@ function startGame() {
     gameOverPanel.style.display = 'none';
     gamePlayPanel.style.display = 'block';
     
-    // Randomize all 16 songs
     randomizedPlaylist = [...kiyoSongs].sort(() => 0.5 - Math.random());
     
     playAudioIntroPhase();
 }
 
-// Phase 1: Play 3 Seconds
 function playAudioIntroPhase() {
     if(currentQuestionIndex >= randomizedPlaylist.length) {
         endGame();
@@ -181,14 +223,13 @@ function playAudioIntroPhase() {
 
     const currentSong = randomizedPlaylist[currentQuestionIndex];
     
-    // Reset UI for intro
     guessingArea.style.display = 'none';
     feedbackDisplay.style.display = 'none';
     visualizer.style.opacity = '1';
     timerFill.style.transition = 'none';
     timerFill.style.transform = 'scaleX(1)';
     guessInput.value = "";
-    questionText.innerText = `🎵 Track ${currentQuestionIndex + 1} of 16 - Listen closely!`;
+    questionText.innerText = `🎵 Track ${currentQuestionIndex + 1} of ${TOTAL_SONGS} - Listen closely!`;
 
     if (currentAudio) {
         currentAudio.pause();
@@ -198,14 +239,12 @@ function playAudioIntroPhase() {
     currentAudio = new Audio(currentSong.src);
     currentAudio.play().catch(e => console.error("Audio block:", e));
 
-    // Play EXACTLY 3 seconds
     gameFlowTimeout = setTimeout(() => {
         if (currentAudio) currentAudio.pause(); 
         startGuessingPhase();
     }, 3000);
 }
 
-// Phase 2: 10 Seconds to Type
 function startGuessingPhase() {
     visualizer.style.opacity = '0.1';
     questionText.innerText = "Type the exact title!";
@@ -214,31 +253,26 @@ function startGuessingPhase() {
     guessInput.disabled = false;
     guessInput.focus();
 
-    // Start 10s visual timer
     timerFill.style.transition = `transform 10s linear`;
     timerFill.style.transform = 'scaleX(0)';
 
     roundStartTime = Date.now();
 
-    // Force end of guess phase after 10s
     timerInterval = setTimeout(() => {
-        processGuess(true); // true = timed out
+        processGuess(true); 
     }, 10000);
 }
 
-// Submit via button or Enter key
 submitGuessBtn.addEventListener('click', () => processGuess(false));
 guessInput.addEventListener('keydown', (e) => {
     if(e.key === 'Enter') processGuess(false);
 });
 
-// Process the guess and calculate time
 function processGuess(isTimeout) {
     clearTimeout(timerInterval);
     submitGuessBtn.disabled = true;
     guessInput.disabled = true;
 
-    // Calculate exact time taken (capped at 10,000ms)
     let elapsed = Math.min(10000, Date.now() - roundStartTime);
     totalTimeMs += elapsed;
     totalTimeDisplay.innerText = (totalTimeMs / 1000).toFixed(2);
@@ -262,23 +296,19 @@ function processGuess(isTimeout) {
     startExtendedAudioPhase();
 }
 
-// Phase 3: Reveal Answer & Play 10 more seconds
 function startExtendedAudioPhase() {
     guessingArea.style.display = 'none';
     visualizer.style.opacity = '1';
     questionText.innerText = "Vibing... 🎶";
 
-    // Resume audio
     if(currentAudio) currentAudio.play();
 
-    // Wait 10 seconds before moving to next track
     gameFlowTimeout = setTimeout(() => {
         currentQuestionIndex++;
         playAudioIntroPhase();
     }, 10000);
 }
 
-// End Game
 function endGame() {
     gamePlayPanel.style.display = 'none';
     gameOverPanel.style.display = 'block';
@@ -287,11 +317,10 @@ function endGame() {
     document.getElementById('final-score').innerText = currentScore;
     document.getElementById('final-time').innerText = finalSeconds;
 
-    // Save Score & Lock Device
     let board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || [];
     board.push({ name: playerName, score: currentScore, time: parseFloat(finalSeconds) });
     localStorage.setItem('kiyotieLeaderboard', JSON.stringify(board));
-    localStorage.setItem('kiyotiePlayed', "true"); // Lock out
+    localStorage.setItem('kiyotiePlayed', "true");
 
     if(typeof confetti === 'function') {
         confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#ea8ca6', '#121212', '#a8a8a8'] });
@@ -321,7 +350,19 @@ const photoHeight = 473;
 const photoX = 80;       
 const positions = [290, 773, 1256];
 
-const poseMessages = ["Pose 1: Kiyotie check! ✌️", "Pose 2: Heart sign! 🫶", "Pose 3: Concert mode! 🎤"];
+// The 10 lyric-inspired photobooth pose sets
+const poseSets = [
+    ["Pose 1: 'Hanap ko na ngiti mo' 😁", "Pose 2: The 'Tulo Laway' sleepyhead 😴", "Pose 3: Reaching out ('Hawakan mo kamay ko') 🫴"],
+    ["Pose 1: The Secret ('Baka mabunyag') 🤫", "Pose 2: 'Nakatunganga sa bintana' 🪟", "Pose 3: 'Komedya' big laugh 😆"],
+    ["Pose 1: 'Tagutaguan' hiding face 🫣", "Pose 2: 'Trahedya' dramatic pout 🥺", "Pose 3: 'Sakay sa kalesa' looking far 🐎"],
+    ["Pose 1: Hugging yourself ('Gabing malamig') 🥶", "Pose 2: 'Sinangla pati puso' finger heart 🫰", "Pose 3: Confident stare ('Palaban') 🤨"],
+    ["Pose 1: 'Pangakong paraiso' looking up ✨", "Pose 2: Wiping the 'tulo laway' 🤤", "Pose 3: 'Hindi maipinta' art pose 🖼️"],
+    ["Pose 1: 'Kumportable' relaxed lean 🛋️", "Pose 2: 'Kumakabog na damdamin' hand on chest 💓", "Pose 3: The 'Lihim' wink 😉"],
+    ["Pose 1: 'Walang makakaalam' covering camera 🖐️", "Pose 2: 'Abot langit' pointing up ☝️", "Pose 3: 'Wag kang bibitaw' holding hands out 🤝"],
+    ["Pose 1: 'Una kong tikim' lip bite 🫦", "Pose 2: 'Mga matang papikit' closing eyes 😌", "Pose 3: 'Lintik na tinginan' intense eye contact 👀"],
+    ["Pose 1: 'Masaya sa naranasan' genuine smile 😊", "Pose 2: 'Kahit walang sabihin' zip the lips 🤐", "Pose 3: 'Ikaw ang makakasama' pointing at lens 🫵"],
+    ["Pose 1: 'Nakahilata sa kama' hands behind head 🛌", "Pose 2: 'Daig pa ang nagcasino' throwing dice 🎲", "Pose 3: 'Binuklat bagong libro' reading a book 📖"]
+];
 
 let photoCounter = 1; 
 
@@ -363,15 +404,18 @@ async function runCountdown() {
 
 startBtn.addEventListener('click', async () => {
     startBtn.disabled = true; 
-    downloadBtn.style.display = 'none'; // Hide download button when a new session starts
+    downloadBtn.style.display = 'none'; 
     posePrompt.style.opacity = 1; videoWrapper.classList.remove('idle-border');
     document.getElementById('idle-container').style.opacity = '0';
 
     ctx.fillStyle = "#0f0c1b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
     if(frameImage.complete && frameImage.naturalHeight !== 0) ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
 
+    // Pick a random pose set for this session
+    const currentPoseMessages = poseSets[Math.floor(Math.random() * poseSets.length)];
+
     for (let i = 0; i < 3; i++) {
-        posePrompt.innerText = poseMessages[i]; await runCountdown();
+        posePrompt.innerText = currentPoseMessages[i]; await runCountdown();
         
         ctx.save(); ctx.translate(photoX + photoWidth, positions[i]); ctx.scale(-1, 1); 
         drawVideoCover(ctx, video, 0, 0, photoWidth, photoHeight); ctx.restore();
@@ -400,12 +444,10 @@ startBtn.addEventListener('click', async () => {
     startBtn.innerText = "Retake Photos"; startBtn.disabled = false;
     videoWrapper.classList.add('idle-border'); document.getElementById('idle-container').style.opacity = '1';
     
-    // Show download button only after the photo strip is ready
     downloadBtn.style.display = 'inline-block'; 
 });
 
 async function autoSaveRoutine() {
-    // Show a clean developing animation
     printingOverlay.style.display = 'flex'; document.getElementById('printing-text').innerText = "Developing polaroid...";
     progressFill.style.transition = 'none'; progressFill.style.width = '0%';
     
@@ -424,7 +466,6 @@ function triggerStandardDownload(filename) {
 downloadBtn.addEventListener('click', () => { 
     triggerStandardDownload(getFilename()); 
     photoCounter++; 
-    // Button remains visible so they can download it again if needed before retaking
 });
 
 function drawInitialFrame() {
