@@ -18,8 +18,8 @@ body {
     color: var(--text-dark);
     height: 100vh;
     width: 100vw;
-    overflow-x: hidden;
-    overflow-y: auto;
+    /* Prevent scrolling globally for a strict app-like feel */
+    overflow: hidden; 
 }
 
 /* --- Screen Navigation --- */
@@ -66,7 +66,20 @@ h1 {
 .fan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;}
 
 /* --- Home Screen --- */
-.hero-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+#home-screen {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.hero-container { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    height: 100%; 
+    padding: 20px; 
+    box-sizing: border-box; 
+}
 .menu-options { display: flex; gap: 20px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
 .menu-card {
     background: var(--card-bg); border: 3px solid transparent; border-radius: 20px;
@@ -103,6 +116,12 @@ h1 {
 }
 #song-guess-input:focus, #player-name-input:focus { outline: none; border-color: var(--primary-pink); }
 
+/* Progress Tracker */
+.progress-tracker { display: flex; gap: 4px; margin: 15px 0; width: 100%; height: 12px; }
+.progress-segment { flex: 1; background: #333; border-radius: 6px; transition: background 0.3s; }
+.progress-segment.correct { background: #00e676; box-shadow: 0 0 8px rgba(0, 230, 118, 0.5);}
+.progress-segment.incorrect { background: var(--primary-pink); box-shadow: 0 0 8px rgba(234, 140, 166, 0.5);}
+
 .audio-visualizer { display: flex; justify-content: center; gap: 6px; margin: 20px 0; height: 40px; align-items: flex-end; transition: opacity 0.3s; }
 .bar { width: 12px; background: var(--primary-pink); border-radius: 5px; animation: bounceBar 0.5s infinite alternate; }
 .bar:nth-child(2) { animation-delay: 0.1s; height: 100%; }
@@ -126,7 +145,8 @@ h1 {
 .lb-stats span { color: var(--text-light); }
 
 /* --- Photobooth Specifics --- */
-.app-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; padding: 15px; box-sizing: border-box; align-items: center; justify-content: center; margin-top: 40px; }
+#photobooth-screen { height: 100vh; overflow: hidden; }
+.app-container { display: flex; flex-direction: column; width: 100vw; padding: 15px; box-sizing: border-box; align-items: center; justify-content: center; height: calc(100vh - 60px); margin-top: 60px; overflow: hidden;}
 
 .layout { display: flex; flex-direction: row; gap: 40px; justify-content: center; align-items: center; width: 100%; max-width: 1200px; height: 80vh; }
 .camera-section { display: flex; flex-direction: column; align-items: center; gap: 15px; flex: 1.2; width: 100%; }
@@ -151,7 +171,22 @@ h1 {
 @keyframes snapSlide { 0% { transform: scale(1) translateX(0); opacity: 1; } 100% { transform: scale(0.3) translateY(100%); opacity: 0; } }
 
 .operator-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
-#result-canvas { height: 100%; max-height: 70vh; width: auto; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); object-fit: contain; cursor: zoom-in; background-color: #ffffff;}
+#result-canvas { height: 100%; max-height: 70vh; width: auto; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); object-fit: contain; cursor: crosshair; background-color: #ffffff; touch-action: none;}
+
+/* Stickers */
+.sticker-menu { display: flex; gap: 10px; margin-top: 15px; justify-content: center; display: none; flex-wrap: wrap;}
+.sticker-btn { font-size: 2rem; background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; transition: transform 0.2s, border-color 0.2s; display: flex; align-items: center; justify-content: center; padding-bottom: 4px;}
+.sticker-btn:hover { transform: scale(1.15); border-color: var(--primary-pink); background: rgba(255,255,255,0.2);}
+.sticker-btn.img-sticker {
+    background: transparent;
+    border: 2px solid transparent;
+    padding: 2px;
+    object-fit: contain;
+    border-radius: 8px; 
+}
+.sticker-btn.img-sticker:hover {
+    background: rgba(255,255,255,0.1);
+}
 
 /* Printing overlay */
 #printing-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--card-bg); z-index: 20; display: flex; align-items: center; justify-content: center; flex-direction: column; border-radius: 6px; }
@@ -166,26 +201,22 @@ h1 {
 .close-modal { position: absolute; top: 20px; right: 30px; color: var(--text-light); font-size: 50px; cursor: pointer; transition: 0.2s;}
 .close-modal:hover { color: var(--primary-pink); }
 
-/* --- NEW CSS FOR BUTTON GROUP & SAVE UX --- */
 .button-group {
     display: flex;
     gap: 15px;
     width: 100%;
     justify-content: center;
-    flex-wrap: wrap; /* Helps on mobile */
+    flex-wrap: wrap; 
 }
 
-/* Distinctive Save Button */
 .fan-btn.save-action {
-    background: #00e676; /* Bright success green */
+    background: #00e676; 
     color: #121212;
     box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
 }
 .fan-btn.save-action:hover {
     background: #00c853;
 }
-
-/* Visual state applied via JS when clicked */
 .fan-btn.save-action.saved-state {
     background: #121212;
     color: #00e676;

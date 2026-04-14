@@ -148,6 +148,7 @@ const timerFill = document.getElementById('timer-fill');
 const scoreDisplay = document.getElementById('current-score');
 const totalTimeDisplay = document.getElementById('total-time-display');
 const leaderboardList = document.getElementById('leaderboard-list');
+const progressTracker = document.getElementById('progress-tracker');
 
 function checkDevicePlayedStatus() {
     const hasPlayed = localStorage.getItem('kiyotiePlayed');
@@ -204,6 +205,12 @@ function startGame() {
     scoreDisplay.innerText = currentScore;
     totalTimeDisplay.innerText = "0.00";
     
+    // Initialize Progress Tracker
+    progressTracker.innerHTML = '';
+    for(let i=0; i<TOTAL_SONGS; i++) {
+        progressTracker.innerHTML += `<div class="progress-segment" id="seg-${i}"></div>`;
+    }
+
     gameStartPanel.style.display = 'none';
     gameOverPanel.style.display = 'none';
     gamePlayPanel.style.display = 'block';
@@ -280,15 +287,18 @@ function processGuess(isTimeout) {
     const correctTitle = currentSong.title.trim().toLowerCase();
 
     feedbackDisplay.style.display = 'block';
+    const activeSegment = document.getElementById(`seg-${currentQuestionIndex}`);
 
     if(!isTimeout && userGuess === correctTitle) {
         currentScore++;
         scoreDisplay.innerText = currentScore;
         feedbackDisplay.style.color = "#00e676";
         feedbackDisplay.innerText = `✅ Correct! "${currentSong.title}"`;
+        activeSegment.classList.add('correct');
     } else {
         feedbackDisplay.style.color = "var(--primary-pink)";
         feedbackDisplay.innerText = `❌ Incorrect! It was: "${currentSong.title}"`;
+        activeSegment.classList.add('incorrect');
     }
 
     startExtendedAudioPhase();
@@ -325,6 +335,62 @@ function endGame() {
     }
 }
 
+// Scorecard Generator Logic
+document.getElementById('download-scorecard-btn').addEventListener('click', () => {
+    const sCanvas = document.getElementById('scorecard-canvas');
+    const sCtx = sCanvas.getContext('2d');
+    
+    // Background
+    sCtx.fillStyle = '#121212';
+    sCtx.fillRect(0, 0, 1080, 1920);
+    
+    // Gradient Circle Accent
+    const grd = sCtx.createRadialGradient(540, 600, 50, 540, 600, 500);
+    grd.addColorStop(0, "rgba(234, 140, 166, 0.4)");
+    grd.addColorStop(1, "transparent");
+    sCtx.fillStyle = grd;
+    sCtx.fillRect(0, 0, 1080, 1920);
+
+    // Decorative Graphic
+    sCtx.strokeStyle = '#ea8ca6';
+    sCtx.lineWidth = 15;
+    sCtx.beginPath(); sCtx.arc(540, 700, 350, 0, Math.PI*2); sCtx.stroke();
+
+    // Text Content
+    sCtx.textAlign = 'center';
+    
+    sCtx.fillStyle = '#ffffff';
+    sCtx.font = 'bold 80px sans-serif';
+    sCtx.fillText('KIYOTIES', 540, 250);
+    
+    sCtx.fillStyle = '#ea8ca6';
+    sCtx.font = '50px sans-serif';
+    sCtx.fillText('Ultimate Fan Challenge', 540, 320);
+
+    sCtx.fillStyle = '#ffffff';
+    sCtx.font = 'bold 220px sans-serif';
+    sCtx.fillText(`${currentScore}/${TOTAL_SONGS}`, 540, 750);
+    
+    sCtx.fillStyle = '#a8a8a8';
+    sCtx.font = '60px sans-serif';
+    const finalSeconds = (totalTimeMs / 1000).toFixed(2);
+    sCtx.fillText(`Completed in ${finalSeconds}s`, 540, 880);
+
+    sCtx.fillStyle = '#ffffff';
+    sCtx.font = 'italic 70px sans-serif';
+    sCtx.fillText(`@${playerName}`, 540, 1300);
+
+    sCtx.fillStyle = '#ea8ca6';
+    sCtx.font = '40px sans-serif';
+    sCtx.fillText('Think you can beat me?', 540, 1750);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = `Kiyoties_Scorecard_${playerName}.png`;
+    link.href = sCanvas.toDataURL('image/png');
+    link.click();
+});
+
 
 // ==========================================
 // --- PHOTOBOOTH LOGIC ---
@@ -342,6 +408,7 @@ const snapTemp = document.getElementById('snap-temp');
 const videoWrapper = document.getElementById('video-wrapper');
 const printingOverlay = document.getElementById('printing-overlay');
 const progressFill = document.getElementById('progress-fill');
+const stickerMenu = document.getElementById('sticker-menu');
 
 const photoWidth = 920;  
 const photoHeight = 473; 
@@ -349,6 +416,12 @@ const photoX = 80;
 const positions = [290, 773, 1256];
 
 let photoCounter = 1; 
+
+// State Management for Editing
+let capturedFrames = [null, null, null];
+let activeStickers = [];
+let draggingSticker = null;
+let dragOffsetX = 0, dragOffsetY = 0;
 
 function getFilename() { return `Kiyotie-Photostrip-${String(photoCounter).padStart(3, '0')}.png`; }
 
@@ -386,54 +459,246 @@ async function runCountdown() {
     countdownDisplay.innerText = "";
 }
 
-startBtn.addEventListener('click', async () => {
-    startBtn.disabled = true; 
-    saveBtn.style.display = 'none'; 
-    startBtn.classList.remove('secondary'); 
+// Renders the final composition to the visible canvas
+function renderFinalCanvas() {
+    ctx.fillStyle = "#0f0c1b"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    posePrompt.style.opacity = 1; videoWrapper.classList.remove('idle-border');
-    document.getElementById('idle-container').style.opacity = '0';
-
-    ctx.fillStyle = "#0f0c1b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if(frameImage.complete && frameImage.naturalHeight !== 0) ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < 3; i++) {
-        posePrompt.innerText = `📸 Photo ${i + 1} of 3`; 
-        await runCountdown();
-        
-        ctx.save(); ctx.translate(photoX + photoWidth, positions[i]); ctx.scale(-1, 1); 
-        drawVideoCover(ctx, video, 0, 0, photoWidth, photoHeight); ctx.restore();
-        
-        if(frameImage.complete && frameImage.naturalHeight !== 0) ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
-
-        const tempCanvas = document.createElement('canvas'); tempCanvas.width = photoWidth; tempCanvas.height = photoHeight;
-        const tCtx = tempCanvas.getContext('2d'); tCtx.translate(photoWidth, 0); tCtx.scale(-1, 1);
-        drawVideoCover(tCtx, video, 0, 0, photoWidth, photoHeight); 
-        
-        snapTemp.src = tempCanvas.toDataURL(); snapTemp.style.display = 'block';
-        flash.classList.remove('flash-fade'); flash.classList.add('flash-active');
-        setTimeout(() => { flash.classList.remove('flash-active'); flash.classList.add('flash-fade'); }, 50);
-
-        snapTemp.classList.remove('snap-anim'); void snapTemp.offsetWidth; snapTemp.classList.add('snap-anim');
-        await sleep(800); snapTemp.style.display = 'none'; 
+    // 1. Draw Captured Frames
+    for(let i=0; i<3; i++) {
+        if(capturedFrames[i]) {
+            ctx.drawImage(capturedFrames[i], photoX, positions[i], photoWidth, photoHeight);
+        }
+    }
+    
+    // 2. Draw Static Frame Template
+    if(frameImage.complete && frameImage.naturalHeight !== 0) {
+        ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
     }
 
-    posePrompt.innerText = "All done! Slay! ✨";
-    if (typeof confetti === "function") confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#ea8ca6', '#121212', '#a8a8a8', '#ffffff'] });
-
-    setTimeout(() => { posePrompt.style.opacity = 0; }, 3000); 
+    // 3. Draw Stickers (Both Emoji and Image types)
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     
-    await autoSaveRoutine();
+    activeStickers.forEach(st => {
+        ctx.shadowColor = "rgba(0,0,0,0.6)";
+        ctx.shadowBlur = 15;
+        
+        if (st.type === 'text') {
+            ctx.font = `${st.size}px sans-serif`;
+            ctx.fillText(st.content, st.x, st.y);
+        } else if (st.type === 'image') {
+            // Draw image centered at X, Y
+            ctx.drawImage(
+                st.imgElement, 
+                st.x - (st.width / 2), 
+                st.y - (st.height / 2), 
+                st.width, 
+                st.height
+            );
+        }
+        
+        ctx.shadowBlur = 0; // reset shadow for next items
+    });
+}
 
-    startBtn.innerText = "🔄 Retake"; 
+async function captureSingleFrame(index) {
+    posePrompt.innerText = `📸 Photo ${index + 1}`;
+    posePrompt.style.opacity = 1;
+    await runCountdown();
+    
+    // Capture to off-screen canvas to save image data permanently
+    const tempCanvas = document.createElement('canvas'); 
+    tempCanvas.width = photoWidth; 
+    tempCanvas.height = photoHeight;
+    const tCtx = tempCanvas.getContext('2d'); 
+    tCtx.translate(photoWidth, 0); 
+    tCtx.scale(-1, 1);
+    drawVideoCover(tCtx, video, 0, 0, photoWidth, photoHeight); 
+    
+    capturedFrames[index] = tempCanvas;
+    renderFinalCanvas();
+
+    // Visual Flash FX
+    snapTemp.src = tempCanvas.toDataURL(); snapTemp.style.display = 'block';
+    flash.classList.remove('flash-fade'); flash.classList.add('flash-active');
+    setTimeout(() => { flash.classList.remove('flash-active'); flash.classList.add('flash-fade'); }, 50);
+
+    snapTemp.classList.remove('snap-anim'); void snapTemp.offsetWidth; snapTemp.classList.add('snap-anim');
+    await sleep(800); snapTemp.style.display = 'none'; 
+}
+
+startBtn.addEventListener('click', async () => {
+    if (startBtn.innerText === "🔄 Retake All") {
+        capturedFrames = [null, null, null];
+        activeStickers = [];
+        renderFinalCanvas();
+    }
+
+    startBtn.disabled = true; 
+    saveBtn.style.display = 'none'; 
+    stickerMenu.style.display = 'none';
+    startBtn.classList.remove('secondary'); 
+    videoWrapper.classList.remove('idle-border');
+    document.getElementById('idle-container').style.opacity = '0';
+
+    for (let i = 0; i < 3; i++) {
+        if(!capturedFrames[i]) {
+            await captureSingleFrame(i);
+        }
+    }
+
+    if (typeof confetti === "function") confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#ea8ca6', '#121212', '#a8a8a8', '#ffffff'] });
+    
+    finishCapturePhase();
+});
+
+function finishCapturePhase() {
+    startBtn.innerText = "🔄 Retake All"; 
     startBtn.classList.add('secondary'); 
     startBtn.disabled = false;
     
     videoWrapper.classList.add('idle-border'); document.getElementById('idle-container').style.opacity = '1';
-    
     saveBtn.style.display = 'inline-block'; 
+    stickerMenu.style.display = 'flex';
+    
+    posePrompt.innerText = "Tap a frame to retake it, or add stickers! ✨";
+    posePrompt.style.opacity = 1;
+    setTimeout(() => { posePrompt.style.opacity = 0; }, 4000); 
+}
+
+// --- Sticker Logic ---
+document.querySelectorAll('.sticker-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Check if the clicked sticker is an image tag or a button (emoji)
+        if (btn.tagName.toLowerCase() === 'img') {
+            activeStickers.push({
+                type: 'image',
+                imgElement: btn,
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                // Base width for a 1080x1920 canvas, maintaining aspect ratio
+                width: 350, 
+                height: 350 * (btn.naturalHeight / btn.naturalWidth), 
+                isDragging: false
+            });
+        } else {
+            activeStickers.push({
+                type: 'text',
+                content: btn.innerText,
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                size: 200, 
+                isDragging: false
+            });
+        }
+        renderFinalCanvas();
+    });
 });
 
+// --- Mouse / Touch Interactivity on Canvas ---
+function getCanvasCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+    
+    if(e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    }
+
+    return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+    };
+}
+
+function handleInputDown(e) {
+    if (startBtn.disabled) return; 
+    if (capturedFrames.includes(null)) return; 
+
+    const coords = getCanvasCoordinates(e);
+
+    // 1. Check Stickers (iterate backwards to pick topmost)
+    for(let i = activeStickers.length - 1; i >= 0; i--) {
+        const st = activeStickers[i];
+        let w, h;
+        
+        // Calculate Hitbox based on sticker type
+        if (st.type === 'text') {
+            ctx.font = `${st.size}px sans-serif`;
+            w = ctx.measureText(st.content).width;
+            h = st.size; 
+        } else if (st.type === 'image') {
+            w = st.width;
+            h = st.height;
+        }
+
+        // Hitbox detection
+        if(coords.x > st.x - w/2 && coords.x < st.x + w/2 &&
+           coords.y > st.y - h/2 && coords.y < st.y + h/2) {
+            draggingSticker = st;
+            st.isDragging = true;
+            dragOffsetX = coords.x - st.x;
+            dragOffsetY = coords.y - st.y;
+            
+            // Move sticker to end of array so it renders on top
+            activeStickers.splice(i, 1);
+            activeStickers.push(st);
+            return; 
+        }
+    }
+
+    // 2. Check Frames for Single Retake
+    for(let i=0; i<3; i++) {
+        if(coords.x >= photoX && coords.x <= photoX + photoWidth &&
+           coords.y >= positions[i] && coords.y <= positions[i] + photoHeight) {
+            triggerSingleRetake(i);
+            return;
+        }
+    }
+}
+
+function handleInputMove(e) {
+    if(draggingSticker) {
+        e.preventDefault(); // Prevent scrolling on mobile while dragging
+        const coords = getCanvasCoordinates(e);
+        draggingSticker.x = coords.x - dragOffsetX;
+        draggingSticker.y = coords.y - dragOffsetY;
+        renderFinalCanvas();
+    }
+}
+
+function handleInputUp() {
+    if(draggingSticker) {
+        draggingSticker.isDragging = false;
+        draggingSticker = null;
+    }
+}
+
+// Mouse Event Listeners
+canvas.addEventListener('mousedown', handleInputDown);
+canvas.addEventListener('mousemove', handleInputMove);
+window.addEventListener('mouseup', handleInputUp); // attach to window to catch fast drags
+
+// Touch Event Listeners
+canvas.addEventListener('touchstart', handleInputDown, {passive: false});
+canvas.addEventListener('touchmove', handleInputMove, {passive: false});
+window.addEventListener('touchend', handleInputUp);
+
+async function triggerSingleRetake(index) {
+    if(startBtn.disabled) return;
+    startBtn.disabled = true;
+    saveBtn.style.display = 'none';
+    stickerMenu.style.display = 'none';
+    
+    await captureSingleFrame(index);
+    finishCapturePhase();
+}
+
+// --- Saving ---
 async function autoSaveRoutine() {
     printingOverlay.style.display = 'flex'; document.getElementById('printing-text').innerText = "Certified Kiyotie energy...";
     progressFill.style.transition = 'none'; progressFill.style.width = '0%';
@@ -450,7 +715,9 @@ function triggerStandardDownload(filename) {
     const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png'); link.click();
 }
 
-saveBtn.addEventListener('click', () => { 
+saveBtn.addEventListener('click', async () => { 
+    startBtn.disabled = true; // prevent interacting while "printing"
+    await autoSaveRoutine();
     triggerStandardDownload(getFilename()); 
     photoCounter++; 
     
@@ -461,28 +728,16 @@ saveBtn.addEventListener('click', () => {
     setTimeout(() => {
         saveBtn.innerText = originalText;
         saveBtn.classList.remove('saved-state');
+        startBtn.disabled = false;
     }, 2500);
 });
 
-function drawInitialFrame() {
-    ctx.fillStyle = "#0f0c1b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if(frameImage.complete && frameImage.naturalHeight !== 0) ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
-}
-frameImage.onload = drawInitialFrame; drawInitialFrame();
-
-const modal = document.getElementById("preview-modal");
-canvas.addEventListener("click", () => {
-    if (!startBtn.disabled && startBtn.innerText === "🔄 Retake") {
-        modal.style.display = "flex"; document.getElementById("modal-image").src = canvas.toDataURL('image/png');
-    }
-});
-document.querySelector(".close-modal").addEventListener("click", () => modal.style.display = "none");
-modal.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+frameImage.onload = renderFinalCanvas; 
+renderFinalCanvas(); // Initial draw
 
 document.addEventListener('keydown', (event) => {
     if(screens.photobooth.classList.contains('active')) {
         if (event.code === 'Space') { event.preventDefault(); if (!startBtn.disabled) startBtn.click(); }
         if (event.code === 'KeyS' && saveBtn.style.display !== 'none') saveBtn.click();
     }
-    if (event.code === 'Escape' && modal.style.display === "flex") modal.style.display = "none";
 });

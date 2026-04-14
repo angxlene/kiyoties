@@ -66,6 +66,8 @@
                 <div class="score-board">Score: <span id="current-score">0</span>/<span id="ui-total-2"></span></div>
                 <div class="time-board">Total Time: <span id="total-time-display">0.00</span>s</div>
                 
+                <div class="progress-tracker" id="progress-tracker"></div>
+                
                 <div class="audio-visualizer" id="visualizer">
                     <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                 </div>
@@ -86,7 +88,11 @@
                 <p>Correct Answers: <span id="final-score" style="color: var(--primary-pink); font-weight:bold; font-size: 1.5rem;">0</span>/<span id="ui-total-3"></span></p>
                 <p>Total Guess Time: <span id="final-time" style="color: var(--accent-silver); font-weight:bold;">0.00</span>s</p>
                 <p style="margin-top:20px;">Your score has been locked into the leaderboard.</p>
-                <button id="return-hub-btn" class="fan-btn nav-home" style="margin-top: 15px;">Return to Hub</button>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+                    <button id="download-scorecard-btn" class="fan-btn">📲 Get IG Scorecard</button>
+                    <button id="return-hub-btn" class="fan-btn secondary nav-home">Return to Hub</button>
+                </div>
+                <canvas id="scorecard-canvas" width="1080" height="1920" style="display:none;"></canvas>
             </div>
         </div>
     </div>
@@ -105,9 +111,7 @@
                     <div id="video-wrapper" class="video-wrapper idle-border">
                         <div id="pose-prompt">Get Ready!</div>
                         <video id="video" autoplay playsinline></video>
-                        
                         <div id="idle-container"></div>
-
                         <img id="snap-temp" src="" style="display: none;" alt="">
                         <div id="flash"></div>
                         <div id="countdown-display"></div>
@@ -130,20 +134,26 @@
                             <button id="start-btn" class="fan-btn">📸 Start</button>
                             <button id="save-btn" class="fan-btn save-action" style="display: none;">💾 Save Photo</button>
                         </div>
+                    <div id="sticker-menu" class="sticker-menu">
+                        <span style="color: var(--primary-pink); font-weight: bold; align-self: center;">Add Stickers: </span>
+                        
+                        <button class="sticker-btn">💖</button>
+                        <button class="sticker-btn">🎶</button>
+                        <button class="sticker-btn">🎸</button>
+                        
+                        <img class="sticker-btn img-sticker" src="kiyo_sticker_1.png" alt="Kiyo Face">
+                        <img class="sticker-btn img-sticker" src="kiyo_sticker_2.png" alt="Album Art">
+                        <img class="sticker-btn img-sticker" src="kiyo_sticker_3.png" alt="Logo">
+                    </div>
                     </div>
                 </div>
 
                 <div class="preview-section">
-                    <canvas id="result-canvas" width="1080" height="1920" title="Click to view full size"></canvas>
+                    <canvas id="result-canvas" width="1080" height="1920" title="Click a frame to retake, or drag stickers"></canvas>
                 </div>
             </div>
             <img id="frame" src="kiyo_frame.png" style="display: none;" alt="Frame">
         </div>
-    </div>
-
-    <div id="preview-modal" class="modal">
-        <span class="close-modal">&times;</span>
-        <img class="modal-content" id="modal-image">
     </div>
 
     <script src="script.js"></script>
