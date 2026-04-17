@@ -1,5 +1,5 @@
 // ==========================================
-// --- GLOBAL DATA ---
+// --- GLOBAL DATA & SETUP ---
 // ==========================================
 const kiyoSongs = [
     { id: 1, title: "Urong Sulong", src: "audio/urong_sulong.mp3" },
@@ -19,56 +19,30 @@ const kiyoSongs = [
     { id: 15, title: "SHINEBOI", src: "audio/shineboi.mp3" },
     { id: 16, title: "not even her", src: "audio/not_even_her.mp3" },
     { id: 17, title: "Hanggang Kailan", src: "audio/hanggang_kailan.mp3" },
-    { id: 18, title: "MALAKAS ", src: "audio/malakas.mp3" },
+    { id: 18, title: "MALAKAS", src: "audio/malakas.mp3" },
     { id: 19, title: "LALA", src: "audio/lala.mp3" },
     { id: 20, title: "Bangkok Freestyle", src: "audio/bangkok_freestyle.mp3" },
 ];
 
 const TOTAL_SONGS = kiyoSongs.length;
+const SKIP_INTRO_SECONDS = 20; 
 
 window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ui-total-1').innerText = TOTAL_SONGS;
     document.getElementById('ui-total-2').innerText = TOTAL_SONGS;
     document.getElementById('ui-total-3').innerText = TOTAL_SONGS;
+    loadLeaderboard();
 });
 
-// --- Navigation & Core Logic ---
+// --- Navigation & Audio Globals ---
 const screens = {
     home: document.getElementById('home-screen'),
     game: document.getElementById('game-screen'),
     photobooth: document.getElementById('photobooth-screen')
 };
 
-// --- Photobooth Audio Logic ---
-let pbPlaylist = [];
-let pbAudio = null;
-
-function playPhotoboothMusic() {
-    if (pbAudio) return; 
-
-    if (pbPlaylist.length === 0) {
-        pbPlaylist = [...kiyoSongs].sort(() => 0.5 - Math.random());
-    }
-    
-    const song = pbPlaylist.pop();
-    pbAudio = new Audio(song.src);
-    pbAudio.volume = 0.5; 
-    
-    pbAudio.play().catch(e => console.log("Audio autoplay blocked by browser:", e));
-
-    pbAudio.addEventListener('ended', () => {
-        pbAudio = null; 
-        playPhotoboothMusic(); 
-    });
-}
-
-function stopPhotoboothMusic() {
-    if (pbAudio) {
-        pbAudio.pause();
-        pbAudio.currentTime = 0;
-        pbAudio = null;
-    }
-}
+const pbAudio = new Audio();
+const gameAudio = new Audio();
 
 function showScreen(screenName) {
     Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -79,13 +53,37 @@ function showScreen(screenName) {
         playPhotoboothMusic();
     } else {
         stopPhotoboothMusic();
-        if(video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
+        if(video && video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
             video.srcObject = null;
         }
     }
 }
 
+// --- Photobooth Audio ---
+let pbPlaylist = [];
+
+function playPhotoboothMusic() {
+    if (!pbAudio.paused && pbAudio.currentTime > 0) return; 
+    if (pbPlaylist.length === 0) pbPlaylist = [...kiyoSongs].sort(() => 0.5 - Math.random());
+    
+    const song = pbPlaylist.pop();
+    pbAudio.src = song.src;
+    pbAudio.volume = 0.4; 
+    
+    pbAudio.play().then(() => {
+        pbAudio.currentTime = SKIP_INTRO_SECONDS;
+    }).catch(e => console.log("Blocked by browser autoplay policies."));
+
+    pbAudio.onended = () => playPhotoboothMusic();
+}
+
+function stopPhotoboothMusic() { 
+    pbAudio.pause(); 
+    pbAudio.currentTime = 0; 
+}
+
+// --- Event Listeners ---
 document.getElementById('nav-photobooth').addEventListener('click', () => showScreen('photobooth'));
 document.getElementById('nav-game').addEventListener('click', () => {
     checkDevicePlayedStatus();
@@ -94,61 +92,56 @@ document.getElementById('nav-game').addEventListener('click', () => {
 document.querySelectorAll('.nav-home').forEach(btn => {
     btn.addEventListener('click', () => {
         showScreen('home');
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-        }
+        gameAudio.pause(); gameAudio.currentTime = 0;
         clearTimeout(gameFlowTimeout);
         clearTimeout(timerInterval);
     });
 });
 
+// DEV TOOLS: Ctrl+Alt+D to Wipe, Ctrl+Alt+S to Preview Scorecard
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.altKey && e.code === 'KeyD') {
-        const confirmClear = confirm("DEV TOOL: Clear the leaderboard and device lock?");
-        if(confirmClear) {
-            localStorage.removeItem('kiyotieLeaderboard');
-            localStorage.removeItem('kiyotiePlayed');
-            alert("Database wiped. Refreshing page...");
-            location.reload();
-        }
+        if(confirm("Wipe all data?")) { localStorage.clear(); location.reload(); }
+    }
+    if (e.ctrlKey && e.altKey && e.code === 'KeyS') {
+        playerName = "DEV_TEST"; currentScore = 17; totalTimeMs = 69080; generateScorecard();
     }
 });
 
 // ==========================================
-// --- SONG CHALLENGE LOGIC ---
+// --- CHALLENGE LOGIC ---
 // ==========================================
-
-let currentScore = 0;
-let totalTimeMs = 0;
-let currentQuestionIndex = 0;
-let randomizedPlaylist = [];
-let playerName = "";
-
-let currentAudio = null; 
-let gameFlowTimeout;
-let timerInterval;
-let roundStartTime = 0;
+let currentScore = 0, totalTimeMs = 0, currentQuestionIndex = 0, randomizedPlaylist = [], playerName = "";
+let gameFlowTimeout, timerInterval, roundStartTime = 0;
 
 const startBtnGame = document.getElementById('start-game-btn');
 const confirmStartBtn = document.getElementById('confirm-start-btn');
-const gameStartPanel = document.getElementById('game-start-panel');
-const instructionsPanel = document.getElementById('instructions-panel');
-const gamePlayPanel = document.getElementById('game-play-panel');
-const gameOverPanel = document.getElementById('game-over-panel');
-
-const guessingArea = document.getElementById('guessing-area');
-const guessInput = document.getElementById('song-guess-input');
-const submitGuessBtn = document.getElementById('submit-guess-btn');
-const feedbackDisplay = document.getElementById('feedback-display');
-const visualizer = document.getElementById('visualizer');
-const questionText = document.getElementById('question-text');
+const backToHubBtn = document.getElementById('back-to-hub');
+const leaderboardList = document.getElementById('leaderboard-list');
 const timerFill = document.getElementById('timer-fill');
 
-const scoreDisplay = document.getElementById('current-score');
-const totalTimeDisplay = document.getElementById('total-time-display');
-const leaderboardList = document.getElementById('leaderboard-list');
-const progressTracker = document.getElementById('progress-tracker');
+function loadLeaderboard() {
+    let board = [];
+    try {
+        board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || [];
+    } catch (e) { board = []; }
+
+    leaderboardList.innerHTML = '';
+    if(board.length === 0) {
+        leaderboardList.innerHTML = '<li>No challengers yet!</li>';
+    } else {
+        board.sort((a,b) => b.score - a.score || a.time - b.time)
+             .slice(0, 10)
+             .forEach((entry, i) => {
+                leaderboardList.innerHTML += `
+                    <li>
+                        <span class="lb-rank">#${i+1}</span>
+                        <span class="lb-name">${entry.name}</span> 
+                        <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
+                    </li>`;
+             });
+    }
+}
 
 function checkDevicePlayedStatus() {
     const hasPlayed = localStorage.getItem('kiyotiePlayed');
@@ -162,235 +155,206 @@ function checkDevicePlayedStatus() {
     loadLeaderboard();
 }
 
-function loadLeaderboard() {
-    let board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || [];
-    leaderboardList.innerHTML = '';
-    if(board.length === 0) {
-        leaderboardList.innerHTML = '<li>No challengers yet! Be the first!</li>';
-    } else {
-        board.sort((a,b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.time - b.time;
-        }).forEach((entry, i) => {
-            leaderboardList.innerHTML += `
-                <li>
-                    <span class="lb-rank">#${i+1}</span>
-                    <span class="lb-name">${entry.name}</span> 
-                    <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
-                </li>`;
-        });
-    }
-}
-
 startBtnGame.addEventListener('click', () => {
-    gameStartPanel.style.display = 'none';
-    instructionsPanel.style.display = 'block';
+    document.getElementById('game-start-panel').style.display = 'none';
+    document.getElementById('instructions-panel').style.display = 'block';
 });
 
 confirmStartBtn.addEventListener('click', () => {
-    const nameInput = document.getElementById('player-name-input').value.trim();
-    if(!nameInput) {
-        alert("Please enter your fan name before starting!");
-        return;
-    }
-    playerName = nameInput;
-    instructionsPanel.style.display = 'none';
+    const input = document.getElementById('player-name-input');
+    if(!input.value.trim()) return alert("Enter fan name!");
+    playerName = input.value.trim();
+    localStorage.setItem('kiyotiePlayed', "true"); 
+    backToHubBtn.style.display = 'none'; 
+    document.getElementById('instructions-panel').style.display = 'none';
     startGame();
 });
 
-function startGame() {
-    currentScore = 0;
-    totalTimeMs = 0;
-    currentQuestionIndex = 0;
-    scoreDisplay.innerText = currentScore;
-    totalTimeDisplay.innerText = "0.00";
-    
-    // Initialize Progress Tracker
-    progressTracker.innerHTML = '';
-    for(let i=0; i<TOTAL_SONGS; i++) {
-        progressTracker.innerHTML += `<div class="progress-segment" id="seg-${i}"></div>`;
-    }
-
-    gameStartPanel.style.display = 'none';
-    gameOverPanel.style.display = 'none';
-    gamePlayPanel.style.display = 'block';
-    
-    randomizedPlaylist = [...kiyoSongs].sort(() => 0.5 - Math.random());
-    
-    playAudioIntroPhase();
-}
-
-function playAudioIntroPhase() {
-    if(currentQuestionIndex >= randomizedPlaylist.length) {
-        endGame();
-        return;
-    }
-
-    const currentSong = randomizedPlaylist[currentQuestionIndex];
-    
-    guessingArea.style.display = 'none';
-    feedbackDisplay.style.display = 'none';
-    visualizer.style.opacity = '1';
+function runTimerBar(seconds) {
     timerFill.style.transition = 'none';
     timerFill.style.transform = 'scaleX(1)';
-    guessInput.value = "";
-    questionText.innerText = `🎵 Track ${currentQuestionIndex + 1} of ${TOTAL_SONGS} - Listen closely!`;
-
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-    }
-    
-    currentAudio = new Audio(currentSong.src);
-    currentAudio.play().catch(e => console.error("Audio block:", e));
-
-    gameFlowTimeout = setTimeout(() => {
-        if (currentAudio) currentAudio.pause(); 
-        startGuessingPhase();
-    }, 3000);
-}
-
-function startGuessingPhase() {
-    visualizer.style.opacity = '0.1';
-    questionText.innerText = "Type the exact title!";
-    guessingArea.style.display = 'block';
-    submitGuessBtn.disabled = false;
-    guessInput.disabled = false;
-    guessInput.focus();
-
-    timerFill.style.transition = `transform 10s linear`;
+    void timerFill.offsetWidth; 
+    timerFill.style.transition = `transform ${seconds}s linear`;
     timerFill.style.transform = 'scaleX(0)';
-
-    roundStartTime = Date.now();
-
-    timerInterval = setTimeout(() => {
-        processGuess(true); 
-    }, 10000);
 }
 
-submitGuessBtn.addEventListener('click', () => processGuess(false));
-guessInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') processGuess(false);
-});
+function startGame() {
+    currentScore = 0; totalTimeMs = 0; currentQuestionIndex = 0;
+    document.getElementById('progress-tracker').innerHTML = Array(TOTAL_SONGS).fill('<div class="progress-segment"></div>').join('');
+    document.getElementById('game-play-panel').style.display = 'block';
+    randomizedPlaylist = [...kiyoSongs].sort(() => 0.5 - Math.random());
+    playRound();
+}
+
+function playRound() {
+    if(currentQuestionIndex >= TOTAL_SONGS) return endGame();
+    const song = randomizedPlaylist[currentQuestionIndex];
+    
+    document.getElementById('guessing-area').style.display = 'none';
+    document.getElementById('feedback-display').style.display = 'none';
+    document.getElementById('question-text').innerText = `🎵 Track ${currentQuestionIndex + 1}/${TOTAL_SONGS}`;
+    document.getElementById('song-guess-input').value = "";
+    runTimerBar(3);
+
+    gameAudio.src = song.src;
+    gameAudio.play().then(() => {
+        gameAudio.currentTime = SKIP_INTRO_SECONDS;
+        gameFlowTimeout = setTimeout(() => {
+            gameAudio.pause();
+            startGuessing();
+        }, 3000);
+    }).catch(e => {
+        console.warn("Audio playback issue:", e);
+        gameFlowTimeout = setTimeout(() => startGuessing(), 3000);
+    });
+}
+
+function startGuessing() {
+    document.getElementById('visualizer').style.opacity = '0.1';
+    document.getElementById('question-text').innerText = "Type the title!";
+    document.getElementById('guessing-area').style.display = 'block';
+    const input = document.getElementById('song-guess-input');
+    const btn = document.getElementById('submit-guess-btn');
+    input.disabled = false; btn.disabled = false; input.focus();
+    
+    runTimerBar(10);
+    roundStartTime = Date.now();
+    timerInterval = setTimeout(() => processGuess(true), 10000);
+}
+
+document.getElementById('submit-guess-btn').addEventListener('click', () => processGuess(false));
+document.getElementById('song-guess-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') processGuess(false); });
 
 function processGuess(isTimeout) {
+    const btn = document.getElementById('submit-guess-btn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    document.getElementById('song-guess-input').disabled = true;
     clearTimeout(timerInterval);
-    submitGuessBtn.disabled = true;
-    guessInput.disabled = true;
 
     let elapsed = Math.min(10000, Date.now() - roundStartTime);
-    totalTimeMs += elapsed;
-    totalTimeDisplay.innerText = (totalTimeMs / 1000).toFixed(2);
+    const song = randomizedPlaylist[currentQuestionIndex];
+    const isCorrect = !isTimeout && document.getElementById('song-guess-input').value.trim().toLowerCase() === song.title.toLowerCase();
 
-    const currentSong = randomizedPlaylist[currentQuestionIndex];
-    const userGuess = guessInput.value.trim().toLowerCase();
-    const correctTitle = currentSong.title.trim().toLowerCase();
+    const feedback = document.getElementById('feedback-display');
+    feedback.style.display = 'block';
+    const seg = document.getElementById('progress-tracker').children[currentQuestionIndex];
 
-    feedbackDisplay.style.display = 'block';
-    const activeSegment = document.getElementById(`seg-${currentQuestionIndex}`);
-
-    if(!isTimeout && userGuess === correctTitle) {
+    if(isCorrect) {
         currentScore++;
-        scoreDisplay.innerText = currentScore;
-        feedbackDisplay.style.color = "#00e676";
-        feedbackDisplay.innerText = `✅ Correct! "${currentSong.title}"`;
-        activeSegment.classList.add('correct');
+        totalTimeMs += elapsed;
+        feedback.style.color = "#00e676";
+        feedback.innerHTML = `✅ Correct! "${song.title}"`;
+        seg.classList.add('correct');
     } else {
-        feedbackDisplay.style.color = "var(--primary-pink)";
-        feedbackDisplay.innerText = `❌ Incorrect! It was: "${currentSong.title}"`;
-        activeSegment.classList.add('incorrect');
+        totalTimeMs += 10000;
+        feedback.style.color = "var(--primary-pink)";
+        feedback.innerHTML = `❌ Wrong! It was: "${song.title}" (+10s)`;
+        seg.classList.add('incorrect');
     }
 
-    startExtendedAudioPhase();
-}
-
-function startExtendedAudioPhase() {
-    guessingArea.style.display = 'none';
-    visualizer.style.opacity = '1';
-    questionText.innerText = "Vibing... 🎶";
-
-    if(currentAudio) currentAudio.play();
-
+    document.getElementById('current-score').innerText = currentScore;
+    document.getElementById('total-time-display').innerText = (totalTimeMs/1000).toFixed(2);
+    
+    document.getElementById('visualizer').style.opacity = '1';
+    runTimerBar(10);
+    gameAudio.play().catch(e => console.warn(e)); // Resume audio for feedback
+    
     gameFlowTimeout = setTimeout(() => {
         currentQuestionIndex++;
-        playAudioIntroPhase();
+        playRound();
     }, 10000);
 }
 
 function endGame() {
-    gamePlayPanel.style.display = 'none';
-    gameOverPanel.style.display = 'block';
+    backToHubBtn.style.display = 'block';
+    document.getElementById('game-play-panel').style.display = 'none';
+    document.getElementById('game-over-panel').style.display = 'block';
     
-    const finalSeconds = (totalTimeMs / 1000).toFixed(2);
+    const finalSecs = (totalTimeMs/1000).toFixed(2);
     document.getElementById('final-score').innerText = currentScore;
-    document.getElementById('final-time').innerText = finalSeconds;
+    document.getElementById('final-time').innerText = finalSecs;
 
-    let board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || [];
-    board.push({ name: playerName, score: currentScore, time: parseFloat(finalSeconds) });
+    let board = [];
+    try { board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || []; } catch(e) {}
+    board.push({ name: playerName, score: currentScore, time: parseFloat(finalSecs) });
     localStorage.setItem('kiyotieLeaderboard', JSON.stringify(board));
-    localStorage.setItem('kiyotiePlayed', "true");
-
-    if(typeof confetti === 'function') {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#ea8ca6', '#121212', '#a8a8a8'] });
-    }
+    
+    if(typeof confetti === 'function') confetti({ particleCount: 200, colors: ['#ea8ca6', '#121212'] });
 }
 
-// Scorecard Generator Logic
-document.getElementById('download-scorecard-btn').addEventListener('click', () => {
-    const sCanvas = document.getElementById('scorecard-canvas');
-    const sCtx = sCanvas.getContext('2d');
-    
-    // Background
-    sCtx.fillStyle = '#121212';
-    sCtx.fillRect(0, 0, 1080, 1920);
-    
-    // Gradient Circle Accent
-    const grd = sCtx.createRadialGradient(540, 600, 50, 540, 600, 500);
-    grd.addColorStop(0, "rgba(234, 140, 166, 0.4)");
+// ==========================================
+// --- SCORECARD (FANMADE STYLE) ---
+// ==========================================
+function generateScorecard() {
+    const canvas = document.getElementById('scorecard-canvas');
+    const ctx = canvas.getContext('2d');
+    const pink = "#ea8ca6";
+    const dark = "#121212";
+
+    ctx.fillStyle = dark;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    const grd = ctx.createRadialGradient(540, 960, 100, 540, 960, 800);
+    grd.addColorStop(0, "rgba(234, 140, 166, 0.15)");
     grd.addColorStop(1, "transparent");
-    sCtx.fillStyle = grd;
-    sCtx.fillRect(0, 0, 1080, 1920);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 1080, 1920);
 
-    // Decorative Graphic
-    sCtx.strokeStyle = '#ea8ca6';
-    sCtx.lineWidth = 15;
-    sCtx.beginPath(); sCtx.arc(540, 700, 350, 0, Math.PI*2); sCtx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = "white";
+    ctx.font = 'bold 90px sans-serif';
+    ctx.shadowColor = pink;
+    ctx.shadowBlur = 20;
+    ctx.fillText('KIYOTIES', 540, 300);
+    ctx.shadowBlur = 0;
 
-    // Text Content
-    sCtx.textAlign = 'center';
+    ctx.font = '40px sans-serif';
+    ctx.letterSpacing = "4px";
+    ctx.fillStyle = pink;
+    ctx.fillText('ULTIMATE FAN CHALLENGE', 540, 380);
+
+    ctx.strokeStyle = pink;
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.arc(540, 850, 380, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(540, 850, 410, 0, Math.PI * 2); ctx.stroke();
+
+    // Adjusted font size so "20/20" doesn't overflow
+    ctx.fillStyle = "white";
+    ctx.font = 'bold 220px sans-serif';
+    ctx.fillText(`${currentScore}/${TOTAL_SONGS}`, 540, 920);
+
+    ctx.font = '60px sans-serif';
+    ctx.fillStyle = "#a8a8a8";
+    const time = (totalTimeMs / 1000).toFixed(2);
+    ctx.fillText(`in ${time} seconds`, 540, 1030);
+
+    ctx.font = 'italic bold 80px sans-serif';
+    ctx.fillStyle = "white";
+    ctx.fillText(`@${playerName}`, 540, 1450);
+
+    ctx.font = '40px sans-serif';
+    ctx.fillStyle = pink;
+    ctx.fillText('CAN YOU BEAT THIS?', 540, 1750);
     
-    sCtx.fillStyle = '#ffffff';
-    sCtx.font = 'bold 80px sans-serif';
-    sCtx.fillText('KIYOTIES', 540, 250);
-    
-    sCtx.fillStyle = '#ea8ca6';
-    sCtx.font = '50px sans-serif';
-    sCtx.fillText('Ultimate Fan Challenge', 540, 320);
+    document.getElementById('scorecard-modal').style.display = 'flex';
+}
 
-    sCtx.fillStyle = '#ffffff';
-    sCtx.font = 'bold 220px sans-serif';
-    sCtx.fillText(`${currentScore}/${TOTAL_SONGS}`, 540, 750);
-    
-    sCtx.fillStyle = '#a8a8a8';
-    sCtx.font = '60px sans-serif';
-    const finalSeconds = (totalTimeMs / 1000).toFixed(2);
-    sCtx.fillText(`Completed in ${finalSeconds}s`, 540, 880);
-
-    sCtx.fillStyle = '#ffffff';
-    sCtx.font = 'italic 70px sans-serif';
-    sCtx.fillText(`@${playerName}`, 540, 1300);
-
-    sCtx.fillStyle = '#ea8ca6';
-    sCtx.font = '40px sans-serif';
-    sCtx.fillText('Think you can beat me?', 540, 1750);
-
-    // Download
+document.getElementById('download-scorecard-btn').addEventListener('click', generateScorecard);
+document.querySelector('.close-modal').addEventListener('click', () => {
+    document.getElementById('scorecard-modal').style.display = 'none';
+});
+document.getElementById('save-scorecard-final').addEventListener('click', () => {
+    const canvas = document.getElementById('scorecard-canvas');
     const link = document.createElement('a');
-    link.download = `Kiyoties_Scorecard_${playerName}.png`;
-    link.href = sCanvas.toDataURL('image/png');
+    link.download = `Kiyotie_Score_${playerName}.png`;
+    link.href = canvas.toDataURL('image/png');
     link.click();
 });
-
 
 // ==========================================
 // --- PHOTOBOOTH LOGIC ---
@@ -416,8 +380,6 @@ const photoX = 80;
 const positions = [290, 773, 1256];
 
 let photoCounter = 1; 
-
-// State Management for Editing
 let capturedFrames = [null, null, null];
 let activeStickers = [];
 let draggingSticker = null;
@@ -459,28 +421,25 @@ async function runCountdown() {
     countdownDisplay.innerText = "";
 }
 
-// Renders the final composition to the visible canvas
 function renderFinalCanvas() {
     ctx.fillStyle = "#0f0c1b"; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // 1. Draw Captured Frames
     for(let i=0; i<3; i++) {
         if(capturedFrames[i]) {
             ctx.drawImage(capturedFrames[i], photoX, positions[i], photoWidth, photoHeight);
         }
     }
     
-    // 2. Draw Static Frame Template
     if(frameImage.complete && frameImage.naturalHeight !== 0) {
         ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
     }
 
-    // 3. Draw Stickers (Both Emoji and Image types)
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     
     activeStickers.forEach(st => {
+        ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.6)";
         ctx.shadowBlur = 15;
         
@@ -488,7 +447,6 @@ function renderFinalCanvas() {
             ctx.font = `${st.size}px sans-serif`;
             ctx.fillText(st.content, st.x, st.y);
         } else if (st.type === 'image') {
-            // Draw image centered at X, Y
             ctx.drawImage(
                 st.imgElement, 
                 st.x - (st.width / 2), 
@@ -497,17 +455,20 @@ function renderFinalCanvas() {
                 st.height
             );
         }
-        
-        ctx.shadowBlur = 0; // reset shadow for next items
+        ctx.restore();
     });
 }
 
 async function captureSingleFrame(index) {
+    if (!video.videoWidth) {
+        alert("Camera stream not ready yet!");
+        return false;
+    }
+
     posePrompt.innerText = `📸 Photo ${index + 1}`;
     posePrompt.style.opacity = 1;
     await runCountdown();
     
-    // Capture to off-screen canvas to save image data permanently
     const tempCanvas = document.createElement('canvas'); 
     tempCanvas.width = photoWidth; 
     tempCanvas.height = photoHeight;
@@ -519,13 +480,13 @@ async function captureSingleFrame(index) {
     capturedFrames[index] = tempCanvas;
     renderFinalCanvas();
 
-    // Visual Flash FX
     snapTemp.src = tempCanvas.toDataURL(); snapTemp.style.display = 'block';
     flash.classList.remove('flash-fade'); flash.classList.add('flash-active');
     setTimeout(() => { flash.classList.remove('flash-active'); flash.classList.add('flash-fade'); }, 50);
 
     snapTemp.classList.remove('snap-anim'); void snapTemp.offsetWidth; snapTemp.classList.add('snap-anim');
     await sleep(800); snapTemp.style.display = 'none'; 
+    return true;
 }
 
 startBtn.addEventListener('click', async () => {
@@ -544,7 +505,8 @@ startBtn.addEventListener('click', async () => {
 
     for (let i = 0; i < 3; i++) {
         if(!capturedFrames[i]) {
-            await captureSingleFrame(i);
+            let success = await captureSingleFrame(i);
+            if (!success) { startBtn.disabled = false; return; }
         }
     }
 
@@ -570,16 +532,14 @@ function finishCapturePhase() {
 // --- Sticker Logic ---
 document.querySelectorAll('.sticker-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        // Check if the clicked sticker is an image tag or a button (emoji)
         if (btn.tagName.toLowerCase() === 'img') {
             activeStickers.push({
                 type: 'image',
                 imgElement: btn,
                 x: canvas.width / 2,
                 y: canvas.height / 2,
-                // Base width for a 1080x1920 canvas, maintaining aspect ratio
                 width: 350, 
-                height: 350 * (btn.naturalHeight / btn.naturalWidth), 
+                height: 350 * (btn.naturalHeight / (btn.naturalWidth || 1)) || 350, 
                 isDragging: false
             });
         } else {
@@ -596,7 +556,6 @@ document.querySelectorAll('.sticker-btn').forEach(btn => {
     });
 });
 
-// --- Mouse / Touch Interactivity on Canvas ---
 function getCanvasCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -621,12 +580,10 @@ function handleInputDown(e) {
 
     const coords = getCanvasCoordinates(e);
 
-    // 1. Check Stickers (iterate backwards to pick topmost)
     for(let i = activeStickers.length - 1; i >= 0; i--) {
         const st = activeStickers[i];
         let w, h;
         
-        // Calculate Hitbox based on sticker type
         if (st.type === 'text') {
             ctx.font = `${st.size}px sans-serif`;
             w = ctx.measureText(st.content).width;
@@ -636,7 +593,6 @@ function handleInputDown(e) {
             h = st.height;
         }
 
-        // Hitbox detection
         if(coords.x > st.x - w/2 && coords.x < st.x + w/2 &&
            coords.y > st.y - h/2 && coords.y < st.y + h/2) {
             draggingSticker = st;
@@ -644,14 +600,12 @@ function handleInputDown(e) {
             dragOffsetX = coords.x - st.x;
             dragOffsetY = coords.y - st.y;
             
-            // Move sticker to end of array so it renders on top
             activeStickers.splice(i, 1);
             activeStickers.push(st);
             return; 
         }
     }
 
-    // 2. Check Frames for Single Retake
     for(let i=0; i<3; i++) {
         if(coords.x >= photoX && coords.x <= photoX + photoWidth &&
            coords.y >= positions[i] && coords.y <= positions[i] + photoHeight) {
@@ -663,7 +617,7 @@ function handleInputDown(e) {
 
 function handleInputMove(e) {
     if(draggingSticker) {
-        e.preventDefault(); // Prevent scrolling on mobile while dragging
+        e.preventDefault(); 
         const coords = getCanvasCoordinates(e);
         draggingSticker.x = coords.x - dragOffsetX;
         draggingSticker.y = coords.y - dragOffsetY;
@@ -678,12 +632,10 @@ function handleInputUp() {
     }
 }
 
-// Mouse Event Listeners
 canvas.addEventListener('mousedown', handleInputDown);
 canvas.addEventListener('mousemove', handleInputMove);
-window.addEventListener('mouseup', handleInputUp); // attach to window to catch fast drags
+window.addEventListener('mouseup', handleInputUp); 
 
-// Touch Event Listeners
 canvas.addEventListener('touchstart', handleInputDown, {passive: false});
 canvas.addEventListener('touchmove', handleInputMove, {passive: false});
 window.addEventListener('touchend', handleInputUp);
@@ -716,7 +668,10 @@ function triggerStandardDownload(filename) {
 }
 
 saveBtn.addEventListener('click', async () => { 
-    startBtn.disabled = true; // prevent interacting while "printing"
+    if (saveBtn.disabled) return;
+    saveBtn.disabled = true;
+    startBtn.disabled = true; 
+    
     await autoSaveRoutine();
     triggerStandardDownload(getFilename()); 
     photoCounter++; 
@@ -728,16 +683,17 @@ saveBtn.addEventListener('click', async () => {
     setTimeout(() => {
         saveBtn.innerText = originalText;
         saveBtn.classList.remove('saved-state');
+        saveBtn.disabled = false;
         startBtn.disabled = false;
     }, 2500);
 });
 
 frameImage.onload = renderFinalCanvas; 
-renderFinalCanvas(); // Initial draw
+renderFinalCanvas(); 
 
 document.addEventListener('keydown', (event) => {
     if(screens.photobooth.classList.contains('active')) {
         if (event.code === 'Space') { event.preventDefault(); if (!startBtn.disabled) startBtn.click(); }
-        if (event.code === 'KeyS' && saveBtn.style.display !== 'none') saveBtn.click();
+        if (event.code === 'KeyS' && saveBtn.style.display !== 'none' && !saveBtn.disabled) saveBtn.click();
     }
 });
