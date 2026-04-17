@@ -160,7 +160,22 @@ h1 {
 .soft-pop-anim { animation: softPop 1s ease-in-out forwards; }
 @keyframes softPop { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { opacity: 0; } }
 
-#pose-prompt { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); color: var(--primary-pink); font-size: 1.5rem; font-weight: bold; z-index: 5; opacity: 0; background: var(--dark-leather); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
+#pose-prompt { 
+    position: absolute; 
+    top: 15px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    color: var(--primary-pink); 
+    font-size: 1.5rem; 
+    font-weight: bold; 
+    z-index: 5; 
+    opacity: 0; 
+    background: var(--dark-leather); 
+    padding: 8px 20px; 
+    border-radius: 30px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    white-space: nowrap; /* Forces text to stay on one row */
+}
 #flash { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: white; opacity: 0; z-index: 10; pointer-events: none;}
 .flash-active { opacity: 0.9 !important; }
 .flash-fade { opacity: 0 !important; transition: opacity 0.5s ease-out !important; }
@@ -209,25 +224,39 @@ h1 {
 }
 
 .fan-btn.save-action {
-    background: #00e676; 
-    color: #121212;
-    box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+    background: var(--primary-pink); 
+    color: var(--text-light);
+    box-shadow: 0 4px 15px rgba(234, 140, 166, 0.4);
 }
+
 .fan-btn.save-action:hover {
-    background: #00c853;
+    background: var(--primary-pink-hover);
 }
+
 .fan-btn.save-action.saved-state {
-    background: #121212;
-    color: #00e676;
-    border: 2px solid #00e676;
-    box-shadow: none;
+    background: var(--dark-leather);
+    color: var(--primary-pink);
+    border: 2px solid var(--primary-pink);
+    box-shadow: 0 0 10px rgba(234, 140, 166, 0.3);
     transform: scale(0.98);
 }
 
+/* Responsive Mobile Layout Adjustments */
 @media (max-width: 768px) {
-    .layout { flex-direction: column; height: auto; justify-content: flex-start; }
+    .layout { flex-direction: column; height: auto; justify-content: flex-start; padding-bottom: 40px; }
     .camera-section { max-width: 100%; }
-    #result-canvas { max-height: 50vh; margin-bottom: 20px;}
+    #result-canvas { max-height: 50vh; margin-bottom: 20px; width: 100%; object-fit: contain; }
     h1 { font-size: 2.2rem; }
     .app-container { overflow-y: auto; display: block; height: auto; }
+    
+    /* Dynamically shrink the text and padding so it fits tightly on 1 row for mobile */
+    #pose-prompt {
+        font-size: clamp(0.75rem, 3.5vw, 1.1rem);
+        padding: 6px 15px;
+    }
+    
+    /* Scale down the countdown for small screens so it doesn't overflow */
+    #countdown-display {
+        font-size: 5rem;
+    }
 }

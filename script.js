@@ -289,55 +289,79 @@ function endGame() {
 function generateScorecard() {
     const canvas = document.getElementById('scorecard-canvas');
     const ctx = canvas.getContext('2d');
+    
+    // Website Palette
     const pink = "#ea8ca6";
-    const dark = "#121212";
+    const darkLeather = "#121212";
+    const silver = "#a8a8a8";
 
-    ctx.fillStyle = dark;
+    // 1. Base Light Gradient Background (Matches --bg-gradient)
+    const bgGrd = ctx.createRadialGradient(540, 960, 100, 540, 960, 1200);
+    bgGrd.addColorStop(0, "#ffffff");
+    bgGrd.addColorStop(1, "#e0e0e0");
+    ctx.fillStyle = bgGrd;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    const grd = ctx.createRadialGradient(540, 960, 100, 540, 960, 800);
-    grd.addColorStop(0, "rgba(234, 140, 166, 0.15)");
-    grd.addColorStop(1, "transparent");
-    ctx.fillStyle = grd;
+    // 2. Subtle Pink Glow behind the score circle
+    const pinkGlow = ctx.createRadialGradient(540, 850, 100, 540, 850, 600);
+    pinkGlow.addColorStop(0, "rgba(234, 140, 166, 0.2)");
+    pinkGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = pinkGlow;
     ctx.fillRect(0, 0, 1080, 1920);
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = "white";
+    
+    // 3. Title (Matches h1 styling with the hard pink shadow)
+    ctx.fillStyle = darkLeather;
     ctx.font = 'bold 90px sans-serif';
     ctx.shadowColor = pink;
-    ctx.shadowBlur = 20;
-    ctx.fillText('KIYOTIES', 540, 300);
+    ctx.shadowOffsetX = 6; 
+    ctx.shadowOffsetY = 6;
     ctx.shadowBlur = 0;
+    ctx.fillText('KIYOTIES', 540, 300);
+    
+    // Reset shadow for the rest of the text
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowColor = 'transparent';
 
-    ctx.font = '40px sans-serif';
+    // 4. Subtitle
+    ctx.font = 'bold 40px sans-serif';
     ctx.letterSpacing = "4px";
-    ctx.fillStyle = pink;
+    ctx.fillStyle = darkLeather;
     ctx.fillText('ULTIMATE FAN CHALLENGE', 540, 380);
 
+    // 5. Score Circles (Inner Pink, Outer Leather)
     ctx.strokeStyle = pink;
     ctx.lineWidth = 12;
     ctx.beginPath();
     ctx.arc(540, 850, 380, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(540, 850, 410, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = darkLeather;
+    ctx.lineWidth = 4;
+    ctx.beginPath(); 
+    ctx.arc(540, 850, 410, 0, Math.PI * 2); 
+    ctx.stroke();
 
-    // Adjusted font size so "20/20" doesn't overflow
-    ctx.fillStyle = "white";
+    // 6. Score Text
+    ctx.fillStyle = pink;
     ctx.font = 'bold 220px sans-serif';
     ctx.fillText(`${currentScore}/${TOTAL_SONGS}`, 540, 920);
 
-    ctx.font = '60px sans-serif';
-    ctx.fillStyle = "#a8a8a8";
+    // 7. Time Stats
+    ctx.font = 'bold 60px sans-serif';
+    ctx.fillStyle = silver;
     const time = (totalTimeMs / 1000).toFixed(2);
     ctx.fillText(`in ${time} seconds`, 540, 1030);
 
+    // 8. Player Name
     ctx.font = 'italic bold 80px sans-serif';
-    ctx.fillStyle = "white";
+    ctx.fillStyle = darkLeather;
     ctx.fillText(`@${playerName}`, 540, 1450);
 
-    ctx.font = '40px sans-serif';
+    // 9. Footer
+    ctx.font = 'bold 40px sans-serif';
     ctx.fillStyle = pink;
     ctx.fillText('CAN YOU BEAT THIS?', 540, 1750);
     
