@@ -1,3 +1,20 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyD3ydM--P1nToreODU9pOx8gSAdD0Nc3rk",
+    authDomain: "kiyoties-fanzone.firebaseapp.com",
+    projectId: "kiyoties-fanzone",
+    storageBucket: "kiyoties-fanzone.firebasestorage.app",
+    messagingSenderId: "958852905579",
+    appId: "1:958852905579:web:3be14e5092903c288b4f2e",
+    measurementId: "G-NL14K07WC8"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // ==========================================
 // --- GLOBAL DATA & SETUP ---
 // ==========================================
@@ -98,16 +115,6 @@ document.querySelectorAll('.nav-home').forEach(btn => {
     });
 });
 
-// DEV TOOLS: Ctrl+Alt+D to Wipe, Ctrl+Alt+S to Preview Scorecard
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.altKey && e.code === 'KeyD') {
-        if(confirm("Wipe all data?")) { localStorage.clear(); location.reload(); }
-    }
-    if (e.ctrlKey && e.altKey && e.code === 'KeyS') {
-        playerName = "DEV_TEST"; currentScore = 17; totalTimeMs = 69080; generateScorecard();
-    }
-});
-
 // ==========================================
 // --- CHALLENGE LOGIC ---
 // ==========================================
@@ -121,26 +128,40 @@ const leaderboardList = document.getElementById('leaderboard-list');
 const timerFill = document.getElementById('timer-fill');
 
 function loadLeaderboard() {
-    let board = [];
-    try {
-        board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || [];
-    } catch (e) { board = []; }
+    const lbRef = collection(db, "leaderboard");
+    // Get highest scores, then break ties with lowest time
+    const q = query(lbRef, orderBy("score", "desc"), orderBy("time", "asc"), limit(10));
 
-    leaderboardList.innerHTML = '';
-    if(board.length === 0) {
-        leaderboardList.innerHTML = '<li>No challengers yet!</li>';
-    } else {
-        board.sort((a,b) => b.score - a.score || a.time - b.time)
-             .slice(0, 10)
-             .forEach((entry, i) => {
-                leaderboardList.innerHTML += `
-                    <li>
-                        <span class="lb-rank">#${i+1}</span>
-                        <span class="lb-name">${entry.name}</span> 
-                        <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
-                    </li>`;
-             });
-    }
+    // Real-time listener: Updates instantly across all browsers when someone finishes
+    onSnapshot(q, (snapshot) => {
+        leaderboardList.innerHTML = '';
+        if (snapshot.empty) {
+            leaderboardList.innerHTML = '<li>No challengers yet!</li>';
+            return;
+        }
+
+        let i = 0;
+        snapshot.forEach((doc) => {
+            const entry = doc.data();
+            const li = document.createElement('li');
+            
+            // Build the safe HTML structure first
+            li.innerHTML = `
+                <span class="lb-rank">#${i+1}</span>
+                <span class="lb-name"></span> 
+                <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
+            `;
+            
+            // Safely inject the user-generated string as text, not HTML, to prevent XSS
+            li.querySelector('.lb-name').textContent = entry.name;
+            
+            leaderboardList.appendChild(li);
+            i++;
+        });
+    }, (error) => {
+        console.error("Error fetching leaderboard:", error);
+        leaderboardList.innerHTML = '<li>Cannot connect to server. Check Firebase Indexes!</li>';
+    });
 }
 
 function checkDevicePlayedStatus() {
@@ -152,7 +173,6 @@ function checkDevicePlayedStatus() {
         document.getElementById('already-played-msg').style.display = 'none';
         startBtnGame.style.display = 'inline-block';
     }
-    loadLeaderboard();
 }
 
 startBtnGame.addEventListener('click', () => {
@@ -225,6 +245,10 @@ function startGuessing() {
 document.getElementById('submit-guess-btn').addEventListener('click', () => processGuess(false));
 document.getElementById('song-guess-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') processGuess(false); });
 
+function normalizeString(str) {
+    return str.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
 function processGuess(isTimeout) {
     const btn = document.getElementById('submit-guess-btn');
     if (btn.disabled) return;
@@ -234,7 +258,10 @@ function processGuess(isTimeout) {
 
     let elapsed = Math.min(10000, Date.now() - roundStartTime);
     const song = randomizedPlaylist[currentQuestionIndex];
-    const isCorrect = !isTimeout && document.getElementById('song-guess-input').value.trim().toLowerCase() === song.title.toLowerCase();
+    
+    const userGuess = normalizeString(document.getElementById('song-guess-input').value);
+    const correctTitle = normalizeString(song.title);
+    const isCorrect = !isTimeout && userGuess === correctTitle;
 
     const feedback = document.getElementById('feedback-display');
     feedback.style.display = 'block';
@@ -266,7 +293,7 @@ function processGuess(isTimeout) {
     }, 10000);
 }
 
-function endGame() {
+async function endGame() {
     backToHubBtn.style.display = 'block';
     document.getElementById('game-play-panel').style.display = 'none';
     document.getElementById('game-over-panel').style.display = 'block';
@@ -275,10 +302,17 @@ function endGame() {
     document.getElementById('final-score').innerText = currentScore;
     document.getElementById('final-time').innerText = finalSecs;
 
-    let board = [];
-    try { board = JSON.parse(localStorage.getItem('kiyotieLeaderboard')) || []; } catch(e) {}
-    board.push({ name: playerName, score: currentScore, time: parseFloat(finalSecs) });
-    localStorage.setItem('kiyotieLeaderboard', JSON.stringify(board));
+    // Save to Firebase
+    try {
+        await addDoc(collection(db, "leaderboard"), {
+            name: playerName,
+            score: currentScore,
+            time: parseFloat(finalSecs),
+            timestamp: serverTimestamp() 
+        });
+    } catch (e) {
+        console.error("Error saving score to Firebase: ", e);
+    }
     
     if(typeof confetti === 'function') confetti({ particleCount: 200, colors: ['#ea8ca6', '#121212'] });
 }
@@ -290,81 +324,152 @@ function generateScorecard() {
     const canvas = document.getElementById('scorecard-canvas');
     const ctx = canvas.getContext('2d');
     
-    // Website Palette
     const pink = "#ea8ca6";
     const darkLeather = "#121212";
     const silver = "#a8a8a8";
+    const white = "#ffffff";
 
-    // 1. Base Light Gradient Background (Matches --bg-gradient)
-    const bgGrd = ctx.createRadialGradient(540, 960, 100, 540, 960, 1200);
-    bgGrd.addColorStop(0, "#ffffff");
-    bgGrd.addColorStop(1, "#e0e0e0");
-    ctx.fillStyle = bgGrd;
+    ctx.fillStyle = darkLeather;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    // 2. Subtle Pink Glow behind the score circle
-    const pinkGlow = ctx.createRadialGradient(540, 850, 100, 540, 850, 600);
-    pinkGlow.addColorStop(0, "rgba(234, 140, 166, 0.2)");
-    pinkGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = pinkGlow;
+    const glow1 = ctx.createRadialGradient(200, 200, 50, 200, 200, 800);
+    glow1.addColorStop(0, "rgba(234, 140, 166, 0.4)");
+    glow1.addColorStop(1, "transparent");
+    ctx.fillStyle = glow1;
     ctx.fillRect(0, 0, 1080, 1920);
+
+    const glow2 = ctx.createRadialGradient(880, 1700, 50, 880, 1700, 800);
+    glow2.addColorStop(0, "rgba(234, 140, 166, 0.3)");
+    glow2.addColorStop(1, "transparent");
+    ctx.fillStyle = glow2;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 20;
+    
+    ctx.beginPath();
+    ctx.roundRect(90, 150, 900, 1620, 40); 
+    ctx.fillStyle = white;
+    ctx.fill();
+    ctx.restore();
+
+    const cardBg = ctx.createLinearGradient(90, 150, 90, 1770);
+    cardBg.addColorStop(0, "#ffffff");
+    cardBg.addColorStop(1, "#f2f2f2");
+    ctx.fillStyle = cardBg;
+    ctx.fill(); 
 
     ctx.textAlign = 'center';
-    
-    // 3. Title (Matches h1 styling with the hard pink shadow)
     ctx.fillStyle = darkLeather;
-    ctx.font = 'bold 90px sans-serif';
-    ctx.shadowColor = pink;
-    ctx.shadowOffsetX = 6; 
-    ctx.shadowOffsetY = 6;
-    ctx.shadowBlur = 0;
-    ctx.fillText('KIYOTIES', 540, 300);
-    
-    // Reset shadow for the rest of the text
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.shadowColor = 'transparent';
+    ctx.font = '900 85px system-ui, sans-serif';
+    ctx.fillText('KIYOTIES', 540, 310);
 
-    // 4. Subtitle
-    ctx.font = 'bold 40px sans-serif';
-    ctx.letterSpacing = "4px";
-    ctx.fillStyle = darkLeather;
+    ctx.fillStyle = pink;
+    ctx.font = '800 35px system-ui, sans-serif';
+    ctx.letterSpacing = "6px";
     ctx.fillText('ULTIMATE FAN CHALLENGE', 540, 380);
+    ctx.letterSpacing = "0px";
 
-    // 5. Score Circles (Inner Pink, Outer Leather)
-    ctx.strokeStyle = pink;
-    ctx.lineWidth = 12;
+    ctx.strokeStyle = "rgba(234, 140, 166, 0.15)";
+    ctx.lineWidth = 25;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.arc(540, 850, 380, 0, Math.PI * 2);
+    ctx.arc(540, 800, 260, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = darkLeather;
-    ctx.lineWidth = 4;
-    ctx.beginPath(); 
-    ctx.arc(540, 850, 410, 0, Math.PI * 2); 
-    ctx.stroke();
-
-    // 6. Score Text
-    ctx.fillStyle = pink;
-    ctx.font = 'bold 220px sans-serif';
-    ctx.fillText(`${currentScore}/${TOTAL_SONGS}`, 540, 920);
-
-    // 7. Time Stats
-    ctx.font = 'bold 60px sans-serif';
-    ctx.fillStyle = silver;
-    const time = (totalTimeMs / 1000).toFixed(2);
-    ctx.fillText(`in ${time} seconds`, 540, 1030);
-
-    // 8. Player Name
-    ctx.font = 'italic bold 80px sans-serif';
-    ctx.fillStyle = darkLeather;
-    ctx.fillText(`@${playerName}`, 540, 1450);
-
-    // 9. Footer
-    ctx.font = 'bold 40px sans-serif';
-    ctx.fillStyle = pink;
-    ctx.fillText('CAN YOU BEAT THIS?', 540, 1750);
+    const percentage = currentScore / TOTAL_SONGS;
+    const endAngle = (Math.PI * 2 * percentage) - (Math.PI / 2);
     
+    ctx.strokeStyle = pink;
+    ctx.lineWidth = 25;
+    ctx.beginPath();
+    ctx.arc(540, 800, 260, -Math.PI / 2, endAngle);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(18, 18, 18, 0.1)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(540, 800, 310, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = darkLeather;
+    ctx.font = '900 220px system-ui, sans-serif';
+    ctx.fillText(currentScore, 540, 840);
+    
+    ctx.fillStyle = silver;
+    ctx.font = '800 60px system-ui, sans-serif';
+    ctx.fillText(`OUT OF ${TOTAL_SONGS}`, 540, 940);
+
+    let rank = "TRUE KIYOTIE";
+    if(currentScore <= 5) rank = "CASUAL LISTENER";
+    if(currentScore === TOTAL_SONGS) rank = "ULTIMATE SUPERFAN";
+
+    ctx.fillStyle = pink;
+    ctx.beginPath();
+    ctx.roundRect(310, 1200, 460, 80, 40); 
+    ctx.fill();
+    
+    ctx.fillStyle = white;
+    ctx.font = 'bold 35px system-ui, sans-serif';
+    ctx.fillText(rank, 540, 1253);
+
+    const time = (totalTimeMs / 1000).toFixed(2);
+    ctx.fillStyle = silver;
+    ctx.font = '600 45px system-ui, sans-serif';
+    ctx.fillText(`Completed in ${time} seconds`, 540, 1340);
+
+    ctx.fillStyle = darkLeather;
+    ctx.font = 'italic 800 70px system-ui, sans-serif';
+    ctx.fillText(playerName, 540, 1480);
+    
+    ctx.strokeStyle = "rgba(0,0,0,0.05)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(240, 1550);
+    ctx.lineTo(840, 1550);
+    ctx.stroke();
+
+    ctx.fillStyle = pink;
+    ctx.font = 'bold 40px system-ui, sans-serif';
+    ctx.fillText('CAN YOU BEAT MY SCORE?', 540, 1630);
+    
+    ctx.fillStyle = silver;
+    ctx.font = 'bold 22px system-ui, sans-serif';
+    ctx.letterSpacing = "2px";
+    ctx.fillText('PREPARED & DEVELOPED BY DAILY KIYO CONTENT', 540, 1710);
+    ctx.letterSpacing = "0px"; 
+    
+    const stickers = document.querySelectorAll('.img-sticker');
+    if (stickers.length >= 2) {
+        function drawSticker(img, x, y, angle, maxDim) {
+            const ratio = (img.naturalWidth || img.width) / (img.naturalHeight || img.height);
+            let w, h;
+            if (ratio > 1) { 
+                w = maxDim;
+                h = maxDim / ratio;
+            } else { 
+                h = maxDim;
+                w = maxDim * ratio;
+            }
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle * Math.PI / 180);
+            
+            ctx.shadowColor = "rgba(0,0,0,0.3)";
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetY = 15;
+            
+            ctx.drawImage(img, -w/2, -h/2, w, h);
+            ctx.restore();
+        }
+
+        drawSticker(stickers[0], 850, 240, 12, 280); 
+        drawSticker(stickers[1], 230, 1480, -15, 320);
+    }
+
     document.getElementById('scorecard-modal').style.display = 'flex';
 }
 
@@ -408,6 +513,7 @@ let capturedFrames = [null, null, null];
 let activeStickers = [];
 let draggingSticker = null;
 let dragOffsetX = 0, dragOffsetY = 0;
+let previousTouchAngle = null; 
 
 function getFilename() { return `Kiyotie-Photostrip-${String(photoCounter).padStart(3, '0')}.png`; }
 
@@ -464,17 +570,20 @@ function renderFinalCanvas() {
     
     activeStickers.forEach(st => {
         ctx.save();
+        ctx.translate(st.x, st.y);
+        ctx.rotate(st.rotation);
+        
         ctx.shadowColor = "rgba(0,0,0,0.6)";
         ctx.shadowBlur = 15;
         
         if (st.type === 'text') {
             ctx.font = `${st.size}px sans-serif`;
-            ctx.fillText(st.content, st.x, st.y);
+            ctx.fillText(st.content, 0, 0); 
         } else if (st.type === 'image') {
             ctx.drawImage(
                 st.imgElement, 
-                st.x - (st.width / 2), 
-                st.y - (st.height / 2), 
+                -st.width / 2, 
+                -st.height / 2, 
                 st.width, 
                 st.height
             );
@@ -548,7 +657,7 @@ function finishCapturePhase() {
     saveBtn.style.display = 'inline-block'; 
     stickerMenu.style.display = 'flex';
     
-    posePrompt.innerText = "Tap a frame to retake it, or add stickers! ✨";
+    posePrompt.innerText = "Tap a frame to retake, or drag/scroll to rotate stickers! ✨";
     posePrompt.style.opacity = 1;
     setTimeout(() => { posePrompt.style.opacity = 0; }, 4000); 
 }
@@ -564,6 +673,7 @@ document.querySelectorAll('.sticker-btn').forEach(btn => {
                 y: canvas.height / 2,
                 width: 350, 
                 height: 350 * (btn.naturalHeight / (btn.naturalWidth || 1)) || 350, 
+                rotation: 0,
                 isDragging: false
             });
         } else {
@@ -573,6 +683,7 @@ document.querySelectorAll('.sticker-btn').forEach(btn => {
                 x: canvas.width / 2,
                 y: canvas.height / 2,
                 size: 200, 
+                rotation: 0,
                 isDragging: false
             });
         }
@@ -598,6 +709,45 @@ function getCanvasCoordinates(e) {
     };
 }
 
+canvas.addEventListener('wheel', (e) => {
+    if(startBtn.disabled || capturedFrames.includes(null)) return;
+    
+    const coords = getCanvasCoordinates(e);
+    let target = draggingSticker; 
+    
+    if (!target) {
+        for(let i = activeStickers.length - 1; i >= 0; i--) {
+            const st = activeStickers[i];
+            let w, h;
+            
+            if (st.type === 'text') {
+                ctx.font = `${st.size}px sans-serif`;
+                w = ctx.measureText(st.content).width;
+                h = st.size; 
+            } else if (st.type === 'image') {
+                w = st.width;
+                h = st.height;
+            }
+
+            const dx = coords.x - st.x;
+            const dy = coords.y - st.y;
+            const unrotatedX = dx * Math.cos(-st.rotation) - dy * Math.sin(-st.rotation);
+            const unrotatedY = dx * Math.sin(-st.rotation) + dy * Math.cos(-st.rotation);
+
+            if(unrotatedX > -w/2 && unrotatedX < w/2 && unrotatedY > -h/2 && unrotatedY < h/2) {
+                target = st;
+                break;
+            }
+        }
+    }
+    
+    if (target) {
+        e.preventDefault(); 
+        target.rotation += Math.sign(e.deltaY) * 0.15; 
+        renderFinalCanvas();
+    }
+}, {passive: false});
+
 function handleInputDown(e) {
     if (startBtn.disabled) return; 
     if (capturedFrames.includes(null)) return; 
@@ -617,8 +767,12 @@ function handleInputDown(e) {
             h = st.height;
         }
 
-        if(coords.x > st.x - w/2 && coords.x < st.x + w/2 &&
-           coords.y > st.y - h/2 && coords.y < st.y + h/2) {
+        const dx = coords.x - st.x;
+        const dy = coords.y - st.y;
+        const unrotatedX = dx * Math.cos(-st.rotation) - dy * Math.sin(-st.rotation);
+        const unrotatedY = dx * Math.sin(-st.rotation) + dy * Math.cos(-st.rotation);
+
+        if(unrotatedX > -w/2 && unrotatedX < w/2 && unrotatedY > -h/2 && unrotatedY < h/2) {
             draggingSticker = st;
             st.isDragging = true;
             dragOffsetX = coords.x - st.x;
@@ -642,6 +796,22 @@ function handleInputDown(e) {
 function handleInputMove(e) {
     if(draggingSticker) {
         e.preventDefault(); 
+        
+        if (e.touches && e.touches.length === 2) {
+            const dx = e.touches[1].clientX - e.touches[0].clientX;
+            const dy = e.touches[1].clientY - e.touches[0].clientY;
+            const angle = Math.atan2(dy, dx);
+            
+            if (previousTouchAngle !== null) {
+                draggingSticker.rotation += (angle - previousTouchAngle);
+            }
+            previousTouchAngle = angle;
+            renderFinalCanvas();
+            return; 
+        } else {
+            previousTouchAngle = null;
+        }
+
         const coords = getCanvasCoordinates(e);
         draggingSticker.x = coords.x - dragOffsetX;
         draggingSticker.y = coords.y - dragOffsetY;
@@ -653,6 +823,7 @@ function handleInputUp() {
     if(draggingSticker) {
         draggingSticker.isDragging = false;
         draggingSticker = null;
+        previousTouchAngle = null;
     }
 }
 

@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kiyoties Fan Zone</title>
-    <link rel="stylesheet" href="style.css">
+    
+    <meta property="og:title" content="Kiyoties Ultimate Fan Challenge">
+    <meta property="og:description" content="Take a pic in the fan photobooth and flex how quickly you can guess Kiyo’s songs! Can you top the leaderboard?">
+    <meta property="og:image" content="https://your-vercel-url.com/kiyo_frame.png"> <meta property="og:url" content="https://your-vercel-url.com">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="kiyo_sticker_1.png" type="image/png"> <link rel="stylesheet" href="style.css">
     <script src="confetti.js"></script>
 </head>
 <body>
@@ -27,6 +33,10 @@
                     <p>Guess all <span id="ui-total-1"></span> Kiyo tracks. One try per device!</p>
                 </button>
             </div>
+            
+            <p style="margin-top: auto; padding-top: 40px; color: var(--accent-silver); font-size: 0.9rem; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 1px;">
+                Kiyoties website is prepared and developed by Daily Kiyo Content
+            </p>
         </div>
     </div>
 
@@ -57,10 +67,10 @@
                     <li><strong>Step 1:</strong> You will hear a <strong>3-second intro</strong> (20s into the song).</li>
                     <li><strong>Step 2:</strong> The audio stops! You have <strong>10 seconds</strong> to type.</li>
                     <li><strong>Step 3:</strong> Correct = typing time. Wrong/Timeout = <strong>10s penalty</strong>.</li>
-                    <li><strong>Spelling must be exact!</strong> (No extra spaces).</li>
+                    <li>Punctuation is ignored, but spelling matters!</li>
                     <li style="color: var(--primary-pink); font-weight:bold;">🚫 ANTI-CHEAT: One attempt only. If you refresh or exit, you lose your turn!</li>
                 </ul>
-                <input type="text" id="player-name-input" placeholder="Enter Fan Name (Final!)" maxlength="15" autocomplete="off">
+                <input type="text" id="player-name-input" placeholder="Enter Fan Name (Final!)" maxlength="15" autocomplete="off" spellcheck="false">
                 <button id="confirm-start-btn" class="fan-btn pulse">Lock In & Start</button>
             </div>
 
@@ -74,7 +84,7 @@
                 <div class="timer-bar"><div id="timer-fill"></div></div>
                 <h2 id="question-text">Listening...</h2>
                 <div id="guessing-area" style="display:none;">
-                    <input type="text" id="song-guess-input" placeholder="Type exact title here..." autocomplete="off">
+                    <input type="text" id="song-guess-input" placeholder="Type title here..." autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
                     <button id="submit-guess-btn" class="fan-btn">Submit</button>
                 </div>
                 <div id="feedback-display" style="display:none; margin-top: 20px; font-size: 1.5rem; font-weight: bold;"></div>
@@ -104,7 +114,10 @@
             <div class="layout">
                 <div class="camera-section">
                     <header>
-                        <h1>Kiyotie Photobooth 🫶</h1>
+                        <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                            Kiyotie Photobooth 
+                            <img src="kiyo_sticker_2.png" alt="Kiyo" style="height: 50px; width: auto; object-fit: contain;">
+                        </h1>
                         <p class="subtitle">Kiyoties visuals in 3, 2, 1... 🫶</p>
                     </header>
                     <div id="video-wrapper" class="video-wrapper idle-border">
@@ -147,6 +160,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
