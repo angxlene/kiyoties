@@ -129,10 +129,11 @@ const timerFill = document.getElementById('timer-fill');
 
 function loadLeaderboard() {
     const lbRef = collection(db, "leaderboard");
-    // Get highest scores, then break ties with lowest time
-    const q = query(lbRef, orderBy("score", "desc"), orderBy("time", "asc"), limit(10));
+    // Query ONLY by score to bypass the Firebase Composite Index block.
+    // We pull the top 50 scores, then break ties using 'time' locally.
+    const q = query(lbRef, orderBy("score", "desc"), limit(50));
 
-    // Real-time listener: Updates instantly across all browsers when someone finishes
+    // Real-time listener
     onSnapshot(q, (snapshot) => {
         leaderboardList.innerHTML = '';
         if (snapshot.empty) {
@@ -140,9 +141,23 @@ function loadLeaderboard() {
             return;
         }
 
-        let i = 0;
+        let entries = [];
         snapshot.forEach((doc) => {
-            const entry = doc.data();
+            entries.push(doc.data());
+        });
+
+        // Client-side local sort: Highest score first, then lowest time
+        entries.sort((a, b) => {
+            if (b.score !== a.score) {
+                return b.score - a.score; // Descending score
+            }
+            return a.time - b.time; // Ascending time
+        });
+
+        // Take only the top 10 after the local sort is applied
+        const top10 = entries.slice(0, 10);
+
+        top10.forEach((entry, i) => {
             const li = document.createElement('li');
             
             // Build the safe HTML structure first
@@ -152,11 +167,10 @@ function loadLeaderboard() {
                 <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
             `;
             
-            // Safely inject the user-generated string as text, not HTML, to prevent XSS
+            // Safely inject the user-generated string as text to prevent XSS
             li.querySelector('.lb-name').textContent = entry.name;
             
             leaderboardList.appendChild(li);
-            i++;
         });
     }, (error) => {
         console.error("Error fetching leaderboard:", error);
@@ -285,7 +299,7 @@ function processGuess(isTimeout) {
     
     document.getElementById('visualizer').style.opacity = '1';
     runTimerBar(10);
-    gameAudio.play().catch(e => console.warn(e)); // Resume audio for feedback
+    gameAudio.play().catch(e => console.warn(e)); 
     
     gameFlowTimeout = setTimeout(() => {
         currentQuestionIndex++;
@@ -302,7 +316,6 @@ async function endGame() {
     document.getElementById('final-score').innerText = currentScore;
     document.getElementById('final-time').innerText = finalSecs;
 
-    // Save to Firebase
     try {
         await addDoc(collection(db, "leaderboard"), {
             name: playerName,
@@ -502,6 +515,9 @@ const videoWrapper = document.getElementById('video-wrapper');
 const printingOverlay = document.getElementById('printing-overlay');
 const progressFill = document.getElementById('progress-fill');
 const stickerMenu = document.getElementById('sticker-menu');
+const stickerEditControls = document.getElementById('sticker-edit-controls');
+const undoStickerBtn = document.getElementById('undo-sticker-btn');
+const clearStickersBtn = document.getElementById('clear-stickers-btn');
 
 const photoWidth = 920;  
 const photoHeight = 473; 
@@ -549,6 +565,15 @@ async function runCountdown() {
         await sleep(1000);
     }
     countdownDisplay.innerText = "";
+}
+
+// Controls visibility toggle for Undo & Clear All
+function updateStickerControls() {
+    if (activeStickers.length > 0) {
+        stickerEditControls.style.display = 'flex';
+    } else {
+        stickerEditControls.style.display = 'none';
+    }
 }
 
 function renderFinalCanvas() {
@@ -626,6 +651,7 @@ startBtn.addEventListener('click', async () => {
     if (startBtn.innerText === "🔄 Retake All") {
         capturedFrames = [null, null, null];
         activeStickers = [];
+        updateStickerControls();
         renderFinalCanvas();
     }
 
@@ -657,50 +683,107 @@ function finishCapturePhase() {
     saveBtn.style.display = 'inline-block'; 
     stickerMenu.style.display = 'flex';
     
-    posePrompt.innerText = "Tap a frame to retake, or drag/scroll to rotate stickers! ✨";
+    posePrompt.innerText = "Tap to add stickers or drag them in! ✨";
     posePrompt.style.opacity = 1;
     setTimeout(() => { posePrompt.style.opacity = 0; }, 4000); 
 }
 
-// --- Sticker Logic ---
-document.querySelectorAll('.sticker-btn').forEach(btn => {
+// --- Sticker Logic: Addition & Drag-and-Drop ---
+function addStickerToCanvas(btn, x, y) {
+    if (btn.tagName.toLowerCase() === 'img') {
+        activeStickers.push({
+            type: 'image',
+            imgElement: btn,
+            x: x,
+            y: y,
+            width: 350, 
+            height: 350 * (btn.naturalHeight / (btn.naturalWidth || 1)) || 350, 
+            rotation: 0,
+            isDragging: false
+        });
+    } else {
+        activeStickers.push({
+            type: 'text',
+            content: btn.innerText,
+            x: x,
+            y: y,
+            size: 200, 
+            rotation: 0,
+            isDragging: false
+        });
+    }
+    updateStickerControls();
+    renderFinalCanvas();
+}
+
+document.querySelectorAll('.sticker-btn').forEach((btn, index) => {
+    btn.draggable = true;
+    btn.dataset.index = index;
+
+    // Desktop: Drag from menu
+    btn.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('sticker-index', index);
+    });
+
+    // Mobile/Desktop: Tap to add at center
     btn.addEventListener('click', () => {
-        if (btn.tagName.toLowerCase() === 'img') {
-            activeStickers.push({
-                type: 'image',
-                imgElement: btn,
-                x: canvas.width / 2,
-                y: canvas.height / 2,
-                width: 350, 
-                height: 350 * (btn.naturalHeight / (btn.naturalWidth || 1)) || 350, 
-                rotation: 0,
-                isDragging: false
-            });
-        } else {
-            activeStickers.push({
-                type: 'text',
-                content: btn.innerText,
-                x: canvas.width / 2,
-                y: canvas.height / 2,
-                size: 200, 
-                rotation: 0,
-                isDragging: false
-            });
-        }
-        renderFinalCanvas();
+        addStickerToCanvas(btn, canvas.width / 2, canvas.height / 2);
     });
 });
 
+// Allow dropping stickers onto the canvas
+canvas.addEventListener('dragover', (e) => {
+    e.preventDefault(); 
+});
+
+canvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (startBtn.disabled || capturedFrames.includes(null)) return;
+    const index = e.dataTransfer.getData('sticker-index');
+    if (index !== "") {
+        const btn = document.querySelectorAll('.sticker-btn')[index];
+        const coords = getCanvasCoordinates(e);
+        addStickerToCanvas(btn, coords.x, coords.y);
+    }
+});
+
+// --- UNDO AND CLEAR LOGIC ---
+undoStickerBtn.addEventListener('click', () => {
+    if (startBtn.disabled) return; 
+    if (activeStickers.length > 0) {
+        activeStickers.pop(); 
+        updateStickerControls();
+        renderFinalCanvas();
+    }
+});
+
+clearStickersBtn.addEventListener('click', () => {
+    if (startBtn.disabled) return; 
+    if (activeStickers.length > 0) {
+        activeStickers = []; 
+        updateStickerControls();
+        renderFinalCanvas();
+    }
+});
+
+// Robust Canvas Coordinates Calculation (fixes NaN disappearance issue)
 function getCanvasCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    let clientX = e.clientX;
-    let clientY = e.clientY;
     
-    if(e.touches && e.touches.length > 0) {
+    let clientX = 0;
+    let clientY = 0;
+    
+    if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    } else if (e.clientX !== undefined) {
+        clientX = e.clientX;
+        clientY = e.clientY;
     }
 
     return {
@@ -773,6 +856,7 @@ function handleInputDown(e) {
         const unrotatedY = dx * Math.sin(-st.rotation) + dy * Math.cos(-st.rotation);
 
         if(unrotatedX > -w/2 && unrotatedX < w/2 && unrotatedY > -h/2 && unrotatedY < h/2) {
+            if (e.cancelable) e.preventDefault(); // crucial to prevent ghost touch double-firing
             draggingSticker = st;
             st.isDragging = true;
             dragOffsetX = coords.x - st.x;
@@ -787,6 +871,7 @@ function handleInputDown(e) {
     for(let i=0; i<3; i++) {
         if(coords.x >= photoX && coords.x <= photoX + photoWidth &&
            coords.y >= positions[i] && coords.y <= positions[i] + photoHeight) {
+            if (e.cancelable) e.preventDefault(); 
             triggerSingleRetake(i);
             return;
         }
@@ -795,7 +880,7 @@ function handleInputDown(e) {
 
 function handleInputMove(e) {
     if(draggingSticker) {
-        e.preventDefault(); 
+        if (e.cancelable) e.preventDefault(); 
         
         if (e.touches && e.touches.length === 2) {
             const dx = e.touches[1].clientX - e.touches[0].clientX;
@@ -831,6 +916,7 @@ canvas.addEventListener('mousedown', handleInputDown);
 canvas.addEventListener('mousemove', handleInputMove);
 window.addEventListener('mouseup', handleInputUp); 
 
+// passive: false is required so preventDefault() stops mobile ghost scrolling
 canvas.addEventListener('touchstart', handleInputDown, {passive: false});
 canvas.addEventListener('touchmove', handleInputMove, {passive: false});
 window.addEventListener('touchend', handleInputUp);
@@ -840,9 +926,11 @@ async function triggerSingleRetake(index) {
     startBtn.disabled = true;
     saveBtn.style.display = 'none';
     stickerMenu.style.display = 'none';
+    stickerEditControls.style.display = 'none';
     
     await captureSingleFrame(index);
     finishCapturePhase();
+    updateStickerControls(); // Show buttons again if stickers are left
 }
 
 // --- Saving ---

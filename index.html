@@ -41,7 +41,7 @@
     </div>
 
     <div id="game-screen" class="screen">
-        <button id="back-to-hub" class="back-btn nav-home">⬅ Back to Hub</button>
+        <button id="back-to-hub" class="back-btn nav-home">⬅ Back to Home</button>
         
         <div class="game-container">
             <header>
@@ -109,7 +109,7 @@
     </div>
 
     <div id="photobooth-screen" class="screen">
-        <button class="back-btn nav-home">⬅ Back to Hub</button>
+        <button class="back-btn nav-home">⬅ Back to Home</button>
         <div class="app-container">
             <div class="layout">
                 <div class="camera-section">
@@ -141,7 +141,12 @@
                             <button id="save-btn" class="fan-btn save-action" style="display: none;">💾 Save Photo</button>
                         </div>
                         <div id="sticker-menu" class="sticker-menu">
-                            <span style="color: var(--primary-pink); font-weight: bold; align-self: center;">Add Stickers: </span>
+                            <div id="sticker-edit-controls" style="width: 100%; display: none; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                                <button id="undo-sticker-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">↩️ Undo Last</button>
+                                <button id="clear-stickers-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">🗑️ Clear All</button>
+                            </div>
+
+                            <span style="color: var(--primary-pink); font-weight: bold; align-self: center;">Add Kiyo Stickers: </span>
                             <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_1.png" alt="Kiyo">
                             <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_2.png" alt="Kiyo">
                             <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_3.png" alt="Kiyo">

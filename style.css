@@ -22,7 +22,12 @@ body {
 }
 
 /* --- Screen Navigation --- */
-.screen { display: none; min-height: 100vh; width: 100%; }
+.screen { 
+    display: none; 
+    min-height: 100vh; 
+    width: 100%; 
+    position: relative;
+}
 .screen.active { display: flex; flex-direction: column; }
 
 /* --- Common UI --- */
@@ -144,12 +149,59 @@ h1 {
 .lb-stats span { color: var(--text-light); }
 
 /* --- Photobooth Specifics --- */
-#photobooth-screen { height: 100vh; overflow: hidden; }
-.app-container { display: flex; flex-direction: column; width: 100vw; padding: 15px; box-sizing: border-box; align-items: center; justify-content: center; height: calc(100vh - 60px); margin-top: 60px; overflow: hidden;}
+#photobooth-screen { 
+    height: 100vh; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+}
 
-.layout { display: flex; flex-direction: row; gap: 40px; justify-content: center; align-items: center; width: 100%; max-width: 1200px; height: 80vh; }
-.camera-section { display: flex; flex-direction: column; align-items: center; gap: 15px; flex: 1.2; width: 100%; }
-.preview-section { flex: 0.8; height: 100%; display: flex; justify-content: center; }
+.app-container { 
+    display: flex; 
+    flex-direction: column; 
+    width: 100vw; 
+    padding: 10px 15px; 
+    box-sizing: border-box; 
+    align-items: center; 
+    justify-content: center; 
+    flex: 1; 
+    height: calc(100vh - 60px); 
+    margin-top: 60px; 
+    overflow: hidden; 
+}
+
+.layout { 
+    display: flex; 
+    flex-direction: row; 
+    gap: 30px; 
+    justify-content: center; 
+    align-items: center; 
+    width: 100%; 
+    max-width: 1200px; 
+    height: 100%; 
+    min-height: 0; 
+}
+
+.camera-section { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 15px; 
+    flex: 1.2; 
+    width: 100%; 
+    height: 100%; 
+    min-height: 0; 
+    justify-content: center;
+}
+
+.preview-section { 
+    flex: 0.8; 
+    height: 100%; 
+    min-height: 0; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+}
 
 .video-wrapper { position: relative; width: 100%; aspect-ratio: 900 / 453; background: #000; border-radius: 12px; overflow: hidden; border: 6px solid var(--dark-leather); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .idle-border { animation: borderBreathe 4s infinite alternate; }
@@ -185,7 +237,18 @@ h1 {
 @keyframes snapSlide { 0% { transform: scale(1) translateX(0); opacity: 1; } 100% { transform: scale(0.3) translateY(100%); opacity: 0; } }
 
 .operator-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
-#result-canvas { height: 100%; max-height: 70vh; width: auto; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); object-fit: contain; cursor: crosshair; background-color: #ffffff; touch-action: none;}
+#result-canvas { 
+    max-height: 100%; 
+    max-width: 100%; 
+    width: auto; 
+    height: auto; 
+    object-fit: contain; 
+    border-radius: 12px; 
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
+    cursor: crosshair; 
+    background-color: #ffffff; 
+    touch-action: none;
+}
 
 /* Stickers */
 .sticker-menu { display: flex; gap: 10px; margin-top: 15px; justify-content: center; display: none; flex-wrap: wrap;}
@@ -197,6 +260,7 @@ h1 {
     padding: 2px;
     object-fit: contain;
     border-radius: 8px; 
+    user-select: none; /* Prevents text selection on drag */
 }
 .sticker-btn.img-sticker:hover {
     background: rgba(255,255,255,0.1);
@@ -257,18 +321,43 @@ h1 {
 
 /* Responsive Mobile Layout Adjustments */
 @media (max-width: 768px) {
-    .layout { flex-direction: column; height: auto; justify-content: flex-start; padding-bottom: 40px; }
-    .camera-section { max-width: 100%; }
-    #result-canvas { max-height: 50vh; margin-bottom: 20px; width: 100%; object-fit: contain; }
-    h1 { font-size: 2.2rem; }
-    .app-container { overflow-y: auto; display: block; height: auto; }
+    .app-container { 
+        overflow: hidden; 
+        display: flex; 
+    }
+
+    .layout { 
+        flex-direction: column; 
+        height: 100%; 
+        padding-bottom: 10px; 
+        gap: 10px;
+    }
+    
+    .camera-section { 
+        flex: 1; 
+        justify-content: flex-start;
+    }
+    
+    .preview-section {
+        flex: 1.2; 
+        width: 100%;
+        padding-bottom: 15px;
+    }
+
+    #result-canvas { 
+        max-height: 100%; 
+        margin-bottom: 0; 
+        width: auto; 
+    }
+    
+    h1 { font-size: 1.8rem; }
+    
+    .camera-section header .subtitle { display: none; } 
+    
+    #countdown-display { font-size: 5rem; }
     
     #pose-prompt {
         font-size: clamp(0.75rem, 3.5vw, 1.1rem);
         padding: 6px 15px;
-    }
-    
-    #countdown-display {
-        font-size: 5rem;
     }
 }
