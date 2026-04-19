@@ -133,11 +133,8 @@ const timerFill = document.getElementById('timer-fill');
 
 function loadLeaderboard() {
     const lbRef = collection(db, "leaderboard");
-    // Query ONLY by score to bypass the Firebase Composite Index block.
-    // We pull the top 50 scores, then break ties using 'time' locally.
     const q = query(lbRef, orderBy("score", "desc"), limit(50));
 
-    // Real-time listener
     onSnapshot(q, (snapshot) => {
         leaderboardList.innerHTML = '';
         if (snapshot.empty) {
@@ -150,30 +147,23 @@ function loadLeaderboard() {
             entries.push(doc.data());
         });
 
-        // Client-side local sort: Highest score first, then lowest time
         entries.sort((a, b) => {
             if (b.score !== a.score) {
-                return b.score - a.score; // Descending score
+                return b.score - a.score; 
             }
-            return a.time - b.time; // Ascending time
+            return a.time - b.time; 
         });
 
-        // Take only the top 10 after the local sort is applied
         const top10 = entries.slice(0, 10);
 
         top10.forEach((entry, i) => {
             const li = document.createElement('li');
-            
-            // Build the safe HTML structure first
             li.innerHTML = `
                 <span class="lb-rank">#${i+1}</span>
                 <span class="lb-name"></span> 
                 <span class="lb-stats"><span>${entry.score}</span>/${TOTAL_SONGS} in <span>${entry.time}s</span></span>
             `;
-            
-            // Safely inject the user-generated string as text to prevent XSS
             li.querySelector('.lb-name').textContent = entry.name;
-            
             leaderboardList.appendChild(li);
         });
     }, (error) => {
@@ -321,7 +311,7 @@ async function endGame() {
     document.getElementById('final-time').innerText = finalSecs;
 
     try {
-        const safeDocId = playerName.replace(/\//g, '_'); // Sanitize name to avoid Firebase errors
+        const safeDocId = playerName.replace(/\//g, '_'); 
         await setDoc(doc(db, "leaderboard", safeDocId), {
             name: playerName,
             score: currentScore,
@@ -535,6 +525,7 @@ let activeStickers = [];
 let draggingSticker = null;
 let dragOffsetX = 0, dragOffsetY = 0;
 let previousTouchAngle = null; 
+let previousTouchDistance = null; // Used for multi-touch pinch to zoom
 
 function getFilename() { return `Kiyotie-Photostrip-${String(photoCounter).padStart(3, '0')}.png`; }
 
@@ -572,7 +563,6 @@ async function runCountdown() {
     countdownDisplay.innerText = "";
 }
 
-// Controls visibility toggle for Undo & Clear All
 function updateStickerControls() {
     if (activeStickers.length > 0) {
         stickerEditControls.style.display = 'flex';
@@ -725,18 +715,15 @@ document.querySelectorAll('.sticker-btn').forEach((btn, index) => {
     btn.draggable = true;
     btn.dataset.index = index;
 
-    // Desktop: Drag from menu
     btn.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('sticker-index', index);
     });
 
-    // Mobile/Desktop: Tap to add at center
     btn.addEventListener('click', () => {
         addStickerToCanvas(btn, canvas.width / 2, canvas.height / 2);
     });
 });
 
-// Allow dropping stickers onto the canvas
 canvas.addEventListener('dragover', (e) => {
     e.preventDefault(); 
 });
@@ -752,7 +739,6 @@ canvas.addEventListener('drop', (e) => {
     }
 });
 
-// --- UNDO AND CLEAR LOGIC ---
 undoStickerBtn.addEventListener('click', () => {
     if (startBtn.disabled) return; 
     if (activeStickers.length > 0) {
@@ -771,7 +757,6 @@ clearStickersBtn.addEventListener('click', () => {
     }
 });
 
-// Robust Canvas Coordinates Calculation (fixes NaN disappearance issue)
 function getCanvasCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -797,6 +782,7 @@ function getCanvasCoordinates(e) {
     };
 }
 
+// DESKTOP: Wheel event for Rotation and Scaling
 canvas.addEventListener('wheel', (e) => {
     if(startBtn.disabled || capturedFrames.includes(null)) return;
     
@@ -831,7 +817,21 @@ canvas.addEventListener('wheel', (e) => {
     
     if (target) {
         e.preventDefault(); 
-        target.rotation += Math.sign(e.deltaY) * 0.15; 
+
+        if (e.shiftKey || e.ctrlKey || e.metaKey) {
+            // SCALE: Hold Shift/Ctrl while scrolling
+            const scaleFactor = e.deltaY < 0 ? 1.05 : 0.95;
+            if (target.type === 'text') {
+                target.size *= scaleFactor;
+            } else {
+                target.width *= scaleFactor;
+                target.height *= scaleFactor;
+            }
+        } else {
+            // ROTATE: Normal scroll
+            target.rotation += Math.sign(e.deltaY) * 0.15; 
+        }
+
         renderFinalCanvas();
     }
 }, {passive: false});
@@ -862,7 +862,7 @@ function handleInputDown(e) {
         const unrotatedY = dx * Math.sin(-st.rotation) + dy * Math.cos(-st.rotation);
 
         if(unrotatedX > -w/2 - hitPadding && unrotatedX < w/2 + hitPadding && unrotatedY > -h/2 - hitPadding && unrotatedY < h/2 + hitPadding) {
-            if (e.cancelable) e.preventDefault(); // crucial to prevent ghost touch double-firing
+            if (e.cancelable) e.preventDefault(); 
             draggingSticker = st;
             st.isDragging = true;
             dragOffsetX = coords.x - st.x;
@@ -874,33 +874,44 @@ function handleInputDown(e) {
         }
     }
 
-    for(let i=0; i<3; i++) {
-        if(coords.x >= photoX && coords.x <= photoX + photoWidth &&
-           coords.y >= positions[i] && coords.y <= positions[i] + photoHeight) {
-            if (e.cancelable) e.preventDefault(); 
-            triggerSingleRetake(i);
-            return;
-        }
-    }
+    // Note: The loop that previously allowed tapping frames to trigger triggerSingleRetake 
+    // has been purposefully removed here.
 }
 
 function handleInputMove(e) {
     if(draggingSticker) {
         if (e.cancelable) e.preventDefault(); 
         
+        // MOBILE: Multi-touch Scale and Rotate (Pinch-to-zoom)
         if (e.touches && e.touches.length === 2) {
             const dx = e.touches[1].clientX - e.touches[0].clientX;
             const dy = e.touches[1].clientY - e.touches[0].clientY;
             const angle = Math.atan2(dy, dx);
+            const distance = Math.hypot(dx, dy); // Get distance between fingers
             
+            // Rotation
             if (previousTouchAngle !== null) {
                 draggingSticker.rotation += (angle - previousTouchAngle);
             }
+
+            // Scaling
+            if (previousTouchDistance !== null) {
+                const scaleDiff = distance / previousTouchDistance;
+                if (draggingSticker.type === 'text') {
+                    draggingSticker.size *= scaleDiff;
+                } else {
+                    draggingSticker.width *= scaleDiff;
+                    draggingSticker.height *= scaleDiff;
+                }
+            }
+
             previousTouchAngle = angle;
+            previousTouchDistance = distance;
             renderFinalCanvas();
             return; 
         } else {
             previousTouchAngle = null;
+            previousTouchDistance = null;
         }
 
         const coords = getCanvasCoordinates(e);
@@ -915,6 +926,7 @@ function handleInputUp() {
         draggingSticker.isDragging = false;
         draggingSticker = null;
         previousTouchAngle = null;
+        previousTouchDistance = null;
     }
 }
 
@@ -926,18 +938,6 @@ window.addEventListener('mouseup', handleInputUp);
 canvas.addEventListener('touchstart', handleInputDown, {passive: false});
 canvas.addEventListener('touchmove', handleInputMove, {passive: false});
 window.addEventListener('touchend', handleInputUp);
-
-async function triggerSingleRetake(index) {
-    if(startBtn.disabled) return;
-    startBtn.disabled = true;
-    saveBtn.style.display = 'none';
-    stickerMenu.style.display = 'none';
-    stickerEditControls.style.display = 'none';
-    
-    await captureSingleFrame(index);
-    finishCapturePhase();
-    updateStickerControls(); // Show buttons again if stickers are left
-}
 
 // --- Saving ---
 async function autoSaveRoutine() {
