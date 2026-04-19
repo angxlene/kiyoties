@@ -284,7 +284,7 @@ a:hover {
     gap: 15px;
     justify-content: center;
     align-items: center;
-    flex-wrap: nowrap; /* FORCES SINGLE ROW */
+    flex-wrap: nowrap;
     background: var(--card-bg);
     border: 2px solid rgba(234, 140, 166, 0.25);
     border-radius: 24px;
@@ -301,7 +301,7 @@ a:hover {
     background: rgba(255,255,255,0.1); 
     border: 2px solid transparent; 
     border-radius: 50%; 
-    flex: 0 1 60px; /* Allows shrinking, default 60px */
+    flex: 0 1 60px;
     height: 60px;
     width: 60px;
     cursor: pointer; 
@@ -310,7 +310,7 @@ a:hover {
     align-items: center; 
     justify-content: center; 
     padding-bottom: 4px;
-    box-sizing: border-box; /* Ensures padding doesn't mess with width */
+    box-sizing: border-box; 
 }
 .sticker-btn:hover { 
     transform: scale(1.15); 
@@ -384,10 +384,33 @@ a:hover {
 
 /* --- Responsive Mobile Layout Adjustments --- */
 @media (max-width: 768px) {
+    /* Make sure Body doesn't scroll globally anymore */
     body {
-        overflow-y: auto !important; 
-        height: auto;
+        overflow: hidden !important; 
     }
+
+    /* Allow individual active screens to scroll instead */
+    .screen.active {
+        height: 100vh; /* Fallback */
+        height: 100dvh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* Keep Homepage completely locked from scrolling */
+    #home-screen.active {
+        overflow: hidden !important;
+    }
+
+    /* Scale down Homepage elements slightly so they fit without needing scroll */
+    h1 { font-size: 2.2rem; }
+    .hero-container h1 img { height: 45px !important; }
+    .subtitle { font-size: 0.95rem; }
+    .menu-options { gap: 12px; margin-top: 25px; }
+    .menu-card { padding: 20px 15px; width: 42vw; max-width: 150px; }
+    .menu-card .emoji { font-size: 2.2rem; margin-bottom: 8px; }
+    .menu-card h2 { font-size: 1.1rem; margin-bottom: 5px; }
+    .menu-card p { font-size: 0.85rem; }
 
     .back-btn {
         top: max(20px, env(safe-area-inset-top, 20px));
@@ -454,21 +477,25 @@ a:hover {
         min-height: 180px; 
     }
 
-    /* 3. Controls (Buttons) */
+    /* 3. Controls (Buttons) - NOW SIDE BY SIDE */
     .button-group {
         order: 3;
-        flex-direction: column;
+        flex-direction: row; /* Force side-by-side row */
+        justify-content: center;
         align-items: center;
         width: 100%;
-        gap: 15px;
+        gap: 10px; /* Tighter gap */
         margin-bottom: 20px;
+        padding: 0 15px; /* Prevent touching screen edges */
+        box-sizing: border-box;
     }
 
     .button-group .fan-btn {
-        width: 100%;
-        max-width: 320px;
-        padding: 15px;
-        font-size: 1.2rem;
+        flex: 1; /* Split width 50/50 evenly */
+        width: auto;
+        max-width: none;
+        padding: 12px 10px;
+        font-size: 1rem; /* Slightly smaller text to guarantee fit */
     }
     
     /* 4. Photobooth Strip Canvas */
@@ -500,13 +527,13 @@ a:hover {
 
     /* Sticker Tray Wrapper - Mobile Single Row */
     .sticker-tray {
-        flex-wrap: nowrap; /* FORCES SINGLE ROW ON MOBILE TOO */
+        flex-wrap: nowrap;
         width: calc(100vw - 30px); 
         padding: 12px;
-        gap: 8px; /* Slightly tighter gap to ensure fit */
+        gap: 8px; 
         margin: 0 auto;
         border-radius: 16px;
-        justify-content: space-evenly; /* Spread nicely */
+        justify-content: space-evenly; 
     }
     
     .sticker-header {
@@ -514,10 +541,10 @@ a:hover {
     }
     
     .sticker-btn { 
-        flex-shrink: 1; /* Critical: allows stickers to shrink to fit the row */
-        width: 12vw; /* Dynamically sizes to fit up to 7/8 items */
+        flex-shrink: 1; 
+        width: 12vw; 
         height: 12vw;
-        max-width: 55px; /* Cap size so they don't get too big */
+        max-width: 55px; 
         max-height: 55px;
     }
 }
