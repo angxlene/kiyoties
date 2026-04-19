@@ -17,18 +17,30 @@ body {
     background: var(--bg-gradient);
     color: var(--text-dark);
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
-    overflow: hidden; 
+    overflow: hidden; /* Global lock: The body never scrolls */
 }
 
 /* --- Screen Navigation --- */
 .screen { 
     display: none !important; /* Force hide inactive screens */
-    min-height: 100vh; 
+    height: 100vh;
+    height: 100dvh; /* Container exactly fills the screen */
     width: 100%; 
     position: relative;
 }
-.screen.active { display: flex !important; flex-direction: column; }
+
+.screen.active { 
+    display: flex !important; 
+    flex-direction: column; 
+    overflow-y: auto; /* Master scroll switch: allows internal scrolling for active screens */
+    overflow-x: hidden;
+}
+
+#home-screen.active {
+    overflow: hidden !important; /* Ensures the home screen specifically NEVER scrolls */
+}
 
 /* --- Common UI --- */
 h1 {
@@ -83,11 +95,6 @@ a:hover {
 .fan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;}
 
 /* --- Home Screen --- */
-#home-screen {
-    height: 100vh;
-    overflow: hidden;
-}
-
 .hero-container { 
     display: flex; 
     flex-direction: column; 
@@ -162,11 +169,6 @@ a:hover {
 .lb-stats span { color: var(--text-light); }
 
 /* --- Photobooth Specifics --- */
-#photobooth-screen { 
-    height: 100vh; 
-    overflow: hidden; 
-}
-
 .app-container { 
     display: flex; 
     flex-direction: column; 
@@ -176,9 +178,8 @@ a:hover {
     align-items: center; 
     justify-content: center; 
     flex: 1; 
-    height: calc(100vh - 60px); 
+    min-height: calc(100vh - 60px); /* Changed to min-height so it expands on demand */
     margin-top: 60px; 
-    overflow: hidden; 
 }
 
 .layout { 
@@ -189,8 +190,7 @@ a:hover {
     align-items: center; 
     width: 100%; 
     max-width: 1200px; 
-    height: 100%; 
-    min-height: 0; 
+    min-height: 100%; /* Changed to min-height */
 }
 
 .camera-section { 
@@ -384,21 +384,8 @@ a:hover {
 
 /* --- Responsive Mobile Layout Adjustments --- */
 @media (max-width: 768px) {
-    body {
-        overflow: hidden !important; 
-    }
-
-    /* Allow individual active screens to scroll */
-    .screen.active {
-        height: 100vh;
-        height: 100dvh;
-        overflow-y: auto !important;
-        overflow-x: hidden;
-    }
-
-    #home-screen.active {
-        overflow: hidden !important;
-    }
+    /* Base screen overrides are removed. The base classes now perfectly handle 
+       the scroll locking and unlocking inherently! */
 
     h1 { font-size: 2.2rem; }
     .hero-container h1 img { height: 45px !important; }
@@ -419,18 +406,10 @@ a:hover {
         margin-top: max(80px, env(safe-area-inset-top, 20px) + 60px); 
     }
 
-    /* Fix: Let the Photobooth screen scroll properly */
-    #photobooth-screen.active {
-        height: auto; 
-        min-height: 100vh;
-        overflow-y: visible !important;
-    }
-
-    /* Fix: Let the App Container expand to its content height */
+    /* Fix: Let the App Container expand to its content height naturally inside the scrollable wrapper */
     .app-container { 
         height: auto; 
-        min-height: 100vh;
-        overflow: visible !important; 
+        min-height: calc(100vh - 60px);
         justify-content: flex-start;
         padding-bottom: 60px; /* Space for the bottom tray */
         padding-top: max(80px, env(safe-area-inset-top, 20px) + 60px);
