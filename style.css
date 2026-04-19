@@ -23,12 +23,12 @@ body {
 
 /* --- Screen Navigation --- */
 .screen { 
-    display: none; 
+    display: none !important; /* Force hide inactive screens */
     min-height: 100vh; 
     width: 100%; 
     position: relative;
 }
-.screen.active { display: flex; flex-direction: column; }
+.screen.active { display: flex !important; flex-direction: column; }
 
 /* --- Common UI --- */
 h1 {
@@ -49,7 +49,9 @@ h1 {
 }
 
 .back-btn {
-    position: absolute; top: 15px; left: 15px;
+    position: absolute; 
+    top: 20px; 
+    left: 20px;
     background: transparent; color: var(--dark-leather);
     border: 2px solid var(--dark-leather); padding: 8px 15px;
     border-radius: 20px; cursor: pointer; z-index: 100;
@@ -152,8 +154,7 @@ h1 {
 #photobooth-screen { 
     height: 100vh; 
     overflow: hidden; 
-    display: flex; 
-    flex-direction: column; 
+    /* Display rule intentionally removed here so it doesn't bleed. Handled by .screen.active */
 }
 
 .app-container { 
@@ -356,6 +357,18 @@ h1 {
         height: auto;
     }
 
+    .back-btn {
+        /* Pushes the button down below the iOS notch safely */
+        top: max(20px, env(safe-area-inset-top, 20px));
+        left: 15px;
+        z-index: 999;
+    }
+
+    .game-container {
+        /* Extra padding so the back button doesn't cover game content */
+        margin-top: max(80px, env(safe-area-inset-top, 20px) + 60px); 
+    }
+
     #photobooth-screen {
         height: auto; 
         overflow: visible;
@@ -367,7 +380,8 @@ h1 {
         overflow: visible; 
         justify-content: flex-start;
         padding-bottom: 40px;
-        padding-top: 20px;
+        /* Extra padding to clear the back button on the photobooth screen */
+        padding-top: max(80px, env(safe-area-inset-top, 20px) + 60px);
     }
 
     /* Force the layout into a specific top-to-bottom order */
