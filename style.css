@@ -165,7 +165,6 @@ a:hover {
 #photobooth-screen { 
     height: 100vh; 
     overflow: hidden; 
-    /* Display rule intentionally removed here so it doesn't bleed. Handled by .screen.active */
 }
 
 .app-container { 
@@ -270,11 +269,31 @@ a:hover {
     margin-top: 15px;
 }
 
+.sticker-header {
+    color: var(--primary-pink);
+    font-weight: bold;
+    font-size: 1.3rem;
+    align-self: center;
+    margin-bottom: 15px;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
 .sticker-tray {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap; /* FORCES SINGLE ROW */
+    background: var(--card-bg);
+    border: 2px solid rgba(234, 140, 166, 0.25);
+    border-radius: 24px;
+    padding: 20px 25px;
+    width: 100%;
+    max-width: 700px; 
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    box-sizing: border-box;
 }
 
 .sticker-btn { 
@@ -282,14 +301,16 @@ a:hover {
     background: rgba(255,255,255,0.1); 
     border: 2px solid transparent; 
     border-radius: 50%; 
-    width: 50px; 
-    height: 50px; 
+    flex: 0 1 60px; /* Allows shrinking, default 60px */
+    height: 60px;
+    width: 60px;
     cursor: pointer; 
     transition: transform 0.2s, border-color 0.2s; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     padding-bottom: 4px;
+    box-sizing: border-box; /* Ensures padding doesn't mess with width */
 }
 .sticker-btn:hover { 
     transform: scale(1.15); 
@@ -364,19 +385,17 @@ a:hover {
 /* --- Responsive Mobile Layout Adjustments --- */
 @media (max-width: 768px) {
     body {
-        overflow-y: auto !important; /* Forces scrolling on mobile */
+        overflow-y: auto !important; 
         height: auto;
     }
 
     .back-btn {
-        /* Pushes the button down below the iOS notch safely */
         top: max(20px, env(safe-area-inset-top, 20px));
         left: 15px;
         z-index: 999;
     }
 
     .game-container {
-        /* Extra padding so the back button doesn't cover game content */
         margin-top: max(80px, env(safe-area-inset-top, 20px) + 60px); 
     }
 
@@ -391,11 +410,9 @@ a:hover {
         overflow: visible; 
         justify-content: flex-start;
         padding-bottom: 40px;
-        /* Extra padding to clear the back button on the photobooth screen */
         padding-top: max(80px, env(safe-area-inset-top, 20px) + 60px);
     }
 
-    /* Force the layout into a specific top-to-bottom order */
     .layout { 
         display: flex; 
         flex-direction: column; 
@@ -404,7 +421,6 @@ a:hover {
         gap: 0; 
     }
     
-    /* Unwraps the parent boxes so we can interleave their children */
     .camera-section, .operator-panel { 
         display: contents; 
     }
@@ -482,25 +498,26 @@ a:hover {
         padding: 6px 15px;
     }
 
-    /* Sticker Tray Wrapper */
+    /* Sticker Tray Wrapper - Mobile Single Row */
     .sticker-tray {
-        flex-wrap: wrap; /* Wraps rather than horizontally scrolls */
-        overflow-x: visible;
-        width: 100vw;
-        padding: 15px 20px;
-        margin-left: -15px;
-        justify-content: center; /* Centers items nicely */
-        scrollbar-width: none; 
-        -ms-overflow-style: none; 
+        flex-wrap: nowrap; /* FORCES SINGLE ROW ON MOBILE TOO */
+        width: calc(100vw - 30px); 
+        padding: 12px;
+        gap: 8px; /* Slightly tighter gap to ensure fit */
+        margin: 0 auto;
+        border-radius: 16px;
+        justify-content: space-evenly; /* Spread nicely */
     }
     
-    .sticker-tray::-webkit-scrollbar {
-        display: none; 
+    .sticker-header {
+        font-size: 1.1rem;
     }
-
+    
     .sticker-btn { 
-        flex-shrink: 0;
-        width: 65px;
-        height: 65px;
+        flex-shrink: 1; /* Critical: allows stickers to shrink to fit the row */
+        width: 12vw; /* Dynamically sizes to fit up to 7/8 items */
+        height: 12vw;
+        max-width: 55px; /* Cap size so they don't get too big */
+        max-height: 55px;
     }
 }
