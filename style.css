@@ -238,8 +238,8 @@ h1 {
 
 .operator-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
 #result-canvas { 
-    max-height: 100%; 
-    max-width: 100%; 
+    max-width: 100%;
+    max-height: 100%;
     width: auto; 
     height: auto; 
     object-fit: contain; 
@@ -250,17 +250,47 @@ h1 {
     touch-action: none;
 }
 
-/* Stickers */
-.sticker-menu { display: flex; gap: 10px; margin-top: 15px; justify-content: center; display: none; flex-wrap: wrap;}
-.sticker-btn { font-size: 2rem; background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; transition: transform 0.2s, border-color 0.2s; display: flex; align-items: center; justify-content: center; padding-bottom: 4px;}
-.sticker-btn:hover { transform: scale(1.15); border-color: var(--primary-pink); background: rgba(255,255,255,0.2);}
+/* --- Stickers & Tray --- */
+.sticker-menu-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.sticker-tray {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.sticker-btn { 
+    font-size: 2rem; 
+    background: rgba(255,255,255,0.1); 
+    border: 2px solid transparent; 
+    border-radius: 50%; 
+    width: 50px; 
+    height: 50px; 
+    cursor: pointer; 
+    transition: transform 0.2s, border-color 0.2s; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding-bottom: 4px;
+}
+.sticker-btn:hover { 
+    transform: scale(1.15); 
+    border-color: var(--primary-pink); 
+    background: rgba(255,255,255,0.2);
+}
 .sticker-btn.img-sticker {
     background: transparent;
     border: 2px solid transparent;
     padding: 2px;
     object-fit: contain;
     border-radius: 8px; 
-    user-select: none; /* Prevents text selection on drag */
+    user-select: none;
 }
 .sticker-btn.img-sticker:hover {
     background: rgba(255,255,255,0.1);
@@ -319,45 +349,133 @@ h1 {
     transform: scale(0.98);
 }
 
-/* Responsive Mobile Layout Adjustments */
+/* --- Responsive Mobile Layout Adjustments --- */
 @media (max-width: 768px) {
+    body {
+        overflow-y: auto !important; /* Forces scrolling on mobile */
+        height: auto;
+    }
+
+    #photobooth-screen {
+        height: auto; 
+        overflow: visible;
+    }
+
     .app-container { 
-        overflow: hidden; 
-        display: flex; 
-    }
-
-    .layout { 
-        flex-direction: column; 
-        height: 100%; 
-        padding-bottom: 10px; 
-        gap: 10px;
-    }
-    
-    .camera-section { 
-        flex: 1; 
+        height: auto; 
+        min-height: 100vh;
+        overflow: visible; 
         justify-content: flex-start;
-    }
-    
-    .preview-section {
-        flex: 1.2; 
-        width: 100%;
-        padding-bottom: 15px;
+        padding-bottom: 40px;
+        padding-top: 20px;
     }
 
-    #result-canvas { 
-        max-height: 100%; 
-        margin-bottom: 0; 
-        width: auto; 
+    /* Force the layout into a specific top-to-bottom order */
+    .layout { 
+        display: flex; 
+        flex-direction: column; 
+        height: auto; 
+        padding-bottom: 10px; 
+        gap: 0; 
     }
     
-    h1 { font-size: 1.8rem; }
-    
+    /* Unwraps the parent boxes so we can interleave their children */
+    .camera-section, .operator-panel { 
+        display: contents; 
+    }
+
+    /* 1. Header */
+    .camera-section > header {
+        order: 1;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    .camera-section header h1 {
+        font-size: 1.4rem !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+    }
+
+    .camera-section header h1 img {
+        height: 35px !important;
+    }
+
     .camera-section header .subtitle { display: none; } 
+
+    /* 2. Camera */
+    #video-wrapper {
+        order: 2;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto 20px auto;
+        flex-shrink: 0;
+        min-height: 180px; 
+    }
+
+    /* 3. Controls (Buttons) */
+    .button-group {
+        order: 3;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .button-group .fan-btn {
+        width: 100%;
+        max-width: 320px;
+        padding: 15px;
+        font-size: 1.2rem;
+    }
     
+    /* 4. Photobooth Strip Canvas */
+    .preview-section {
+        order: 4;
+        width: 100%;
+        margin-bottom: 25px;
+        flex: none; 
+    }
+
+    #result-canvas {
+        max-height: 60vh; 
+        max-width: 90vw;
+        margin: 0 auto;
+        display: block;
+    }
+
+    /* 5. Sticker Menu & Tray */
+    #sticker-menu {
+        order: 5;
+    }
+
     #countdown-display { font-size: 5rem; }
     
     #pose-prompt {
         font-size: clamp(0.75rem, 3.5vw, 1.1rem);
         padding: 6px 15px;
+    }
+
+    /* Horizontal Scrolling Tray at the very bottom */
+    .sticker-tray {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        width: 100vw;
+        padding: 15px 20px;
+        margin-left: -15px;
+        justify-content: flex-start;
+        scrollbar-width: none; 
+        -ms-overflow-style: none; 
+    }
+    
+    .sticker-tray::-webkit-scrollbar {
+        display: none; 
+    }
+
+    .sticker-btn {
+        flex-shrink: 0;
+        width: 65px;
+        height: 65px;
     }
 }

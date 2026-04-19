@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3ydM--P1nToreODU9pOx8gSAdD0Nc3rk",
@@ -101,11 +101,15 @@ function stopPhotoboothMusic() {
 }
 
 // --- Event Listeners ---
-document.getElementById('nav-photobooth').addEventListener('click', () => showScreen('photobooth'));
+document.getElementById('nav-photobooth').addEventListener('click', () => {
+    showScreen('photobooth');
+});
+
 document.getElementById('nav-game').addEventListener('click', () => {
     checkDevicePlayedStatus();
     showScreen('game');
 });
+
 document.querySelectorAll('.nav-home').forEach(btn => {
     btn.addEventListener('click', () => {
         showScreen('home');
@@ -317,7 +321,8 @@ async function endGame() {
     document.getElementById('final-time').innerText = finalSecs;
 
     try {
-        await addDoc(collection(db, "leaderboard"), {
+        const safeDocId = playerName.replace(/\//g, '_'); // Sanitize name to avoid Firebase errors
+        await setDoc(doc(db, "leaderboard", safeDocId), {
             name: playerName,
             score: currentScore,
             time: parseFloat(finalSecs),
@@ -836,6 +841,7 @@ function handleInputDown(e) {
     if (capturedFrames.includes(null)) return; 
 
     const coords = getCanvasCoordinates(e);
+    const hitPadding = 30; // Extra touch radius for mobile screens
 
     for(let i = activeStickers.length - 1; i >= 0; i--) {
         const st = activeStickers[i];
@@ -855,7 +861,7 @@ function handleInputDown(e) {
         const unrotatedX = dx * Math.cos(-st.rotation) - dy * Math.sin(-st.rotation);
         const unrotatedY = dx * Math.sin(-st.rotation) + dy * Math.cos(-st.rotation);
 
-        if(unrotatedX > -w/2 && unrotatedX < w/2 && unrotatedY > -h/2 && unrotatedY < h/2) {
+        if(unrotatedX > -w/2 - hitPadding && unrotatedX < w/2 + hitPadding && unrotatedY > -h/2 - hitPadding && unrotatedY < h/2 + hitPadding) {
             if (e.cancelable) e.preventDefault(); // crucial to prevent ghost touch double-firing
             draggingSticker = st;
             st.isDragging = true;

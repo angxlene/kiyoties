@@ -17,7 +17,10 @@
 
     <div id="home-screen" class="screen active">
         <div class="hero-container">
-            <h1>Kiyoties 🎶</h1>
+            <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <span>Kiyoties</span>
+                <img src="kiyo_sticker_1.png" alt="Kiyo" style="height: 60px; width: auto; object-fit: contain;">
+            </h1>
             <p class="subtitle">Welcome to the Kiyoties Fanzone — take a pic, then flex how quickly you can guess Kiyo’s songs.</p>
             
             <div class="menu-options">
@@ -46,12 +49,12 @@
         <div class="game-container">
             <header>
                 <h1>Kiyo Song Challenge 🎧</h1>
-                <p class="subtitle">Prove you're the ultimate fan!</p>
+                <p class="subtitle">Prove you're the ultimate Kiyotie!</p>
             </header>
 
             <div id="game-start-panel">
                 <div class="leaderboard-section">
-                    <h3>🏆 Ultimate Kiyotie Leaderboard</h3>
+                    <h3>🏆 Kiyoties Leaderboard</h3>
                     <ul id="leaderboard-list"></ul>
                 </div>
 
@@ -114,10 +117,10 @@
             <div class="layout">
                 <div class="camera-section">
                     <header>
-                        <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                            Kiyotie Photobooth 
-                            <img src="kiyo_sticker_2.png" alt="Kiyo" style="height: 50px; width: auto; object-fit: contain;">
-                        </h1>
+                    <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                        <span>Kiyotie Photobooth</span>
+                        <img src="kiyo_sticker_2.png" alt="Kiyo" style="height: 50px; width: auto; object-fit: contain;">
+                    </h1>
                         <p class="subtitle">Kiyoties visuals in 3, 2, 1... 🫶</p>
                     </header>
                     <div id="video-wrapper" class="video-wrapper idle-border">
@@ -140,20 +143,23 @@
                             <button id="start-btn" class="fan-btn">📸 Start</button>
                             <button id="save-btn" class="fan-btn save-action" style="display: none;">💾 Save Photo</button>
                         </div>
-                        <div id="sticker-menu" class="sticker-menu">
+                        <div id="sticker-menu" class="sticker-menu-container" style="display: none;">
                             <div id="sticker-edit-controls" style="width: 100%; display: none; justify-content: center; gap: 10px; margin-bottom: 10px;">
                                 <button id="undo-sticker-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">↩️ Undo Last</button>
                                 <button id="clear-stickers-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">🗑️ Clear All</button>
                             </div>
 
-                            <span style="color: var(--primary-pink); font-weight: bold; align-self: center;">Add Kiyo Stickers: </span>
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_1.png" alt="Kiyo">
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_2.png" alt="Kiyo">
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_3.png" alt="Kiyo">
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_4.png" alt="Kiyo">
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_5.png" alt="Kiyo">
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_6.png" alt="Kiyo">
-                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_7.png" alt="Kiyo">
+                            <span style="color: var(--primary-pink); font-weight: bold; align-self: center; margin-bottom: 8px;">Add Kiyo Stickers: </span>
+                            
+                            <div class="sticker-tray">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_1.png" alt="Kiyo">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_2.png" alt="Kiyo">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_3.png" alt="Kiyo">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_4.png" alt="Kiyo">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_5.png" alt="Kiyo">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_6.png" alt="Kiyo">
+                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_7.png" alt="Kiyo">
+                            </div>
                         </div>
                     </div>
                 </div>
