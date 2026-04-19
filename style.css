@@ -48,6 +48,17 @@ h1 {
     font-size: 1.1rem;
 }
 
+/* Hyperlink Styling */
+a {
+    color: var(--primary-pink);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+a:hover {
+    color: var(--primary-pink-hover);
+    text-decoration: underline;
+}
+
 .back-btn {
     position: absolute; 
     top: 20px; 
@@ -487,7 +498,7 @@ h1 {
         display: none; 
     }
 
-    .sticker-btn {
+    .sticker-btn { 
         flex-shrink: 0;
         width: 65px;
         height: 65px;
