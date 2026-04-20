@@ -224,19 +224,31 @@ function playRound() {
     
     document.getElementById('guessing-area').style.display = 'none';
     document.getElementById('feedback-display').style.display = 'none';
-    document.getElementById('question-text').innerText = `🎵 Track ${currentQuestionIndex + 1}/${TOTAL_SONGS}`;
+    document.getElementById('question-text').innerText = `⏳ Loading audio...`; // Changed to show loading state
     document.getElementById('song-guess-input').value = "";
-    runTimerBar(3);
+    
+    // Dim the visualizer and freeze the timer while loading
+    document.getElementById('visualizer').style.opacity = '0.1';
+    timerFill.style.transition = 'none';
+    timerFill.style.transform = 'scaleX(1)';
 
     gameAudio.src = song.src;
+    gameAudio.currentTime = SKIP_INTRO_SECONDS;
+
+    // WAIT for audio to successfully play before moving the bar
     gameAudio.play().then(() => {
-        gameAudio.currentTime = SKIP_INTRO_SECONDS;
+        document.getElementById('visualizer').style.opacity = '1';
+        document.getElementById('question-text').innerText = `🎵 Track ${currentQuestionIndex + 1}/${TOTAL_SONGS}`;
+        runTimerBar(3); // Start timer exactly as audio starts
+        
         gameFlowTimeout = setTimeout(() => {
             gameAudio.pause();
             startGuessing();
         }, 3000);
     }).catch(e => {
         console.warn("Audio playback issue:", e);
+        document.getElementById('question-text').innerText = `🎵 Track ${currentQuestionIndex + 1}/${TOTAL_SONGS}`;
+        runTimerBar(3);
         gameFlowTimeout = setTimeout(() => startGuessing(), 3000);
     });
 }
@@ -295,14 +307,26 @@ function processGuess(isTimeout) {
     document.getElementById('current-score').innerText = currentScore;
     document.getElementById('total-time-display').innerText = (totalTimeMs/1000).toFixed(2);
     
-    document.getElementById('visualizer').style.opacity = '1';
-    runTimerBar(10);
-    gameAudio.play().catch(e => console.warn(e)); 
+    // Freeze timer visually while we resume audio
+    timerFill.style.transition = 'none';
+    timerFill.style.transform = 'scaleX(1)';
     
-    gameFlowTimeout = setTimeout(() => {
-        currentQuestionIndex++;
-        playRound();
-    }, 10000);
+    // Wait for the song to resume before starting the 10-second transition to next song
+    gameAudio.play().then(() => {
+        document.getElementById('visualizer').style.opacity = '1';
+        runTimerBar(10);
+        gameFlowTimeout = setTimeout(() => {
+            currentQuestionIndex++;
+            playRound();
+        }, 10000);
+    }).catch(e => {
+        console.warn(e);
+        runTimerBar(10); // Fallback if audio fails
+        gameFlowTimeout = setTimeout(() => {
+            currentQuestionIndex++;
+            playRound();
+        }, 10000);
+    }); 
 }
 
 async function endGame() {
