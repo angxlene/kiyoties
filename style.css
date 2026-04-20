@@ -34,12 +34,14 @@ body {
 .screen.active { 
     display: flex !important; 
     flex-direction: column; 
+    justify-content: flex-start;
     overflow-y: auto; /* Master scroll switch: allows internal scrolling for active screens */
     overflow-x: hidden;
 }
 
-#home-screen.active {
-    overflow: hidden !important; /* Ensures the home screen specifically NEVER scrolls */
+#home-screen.active,
+#photobooth-screen.active {
+    overflow: hidden !important; /* Strictly lock home and desktop photobooth from scrolling */
 }
 
 /* --- Common UI --- */
@@ -71,13 +73,16 @@ a:hover {
     text-decoration: underline;
 }
 
+/* Base Back Button Styling */
 .back-btn {
-    position: absolute; 
-    top: 20px; 
-    left: 20px;
+    position: relative !important; 
+    display: inline-flex !important;
+    margin: 30px 0 40px 30px !important; 
+    align-self: flex-start;
+    flex-shrink: 0;
     background: transparent; color: var(--dark-leather);
     border: 2px solid var(--dark-leather); padding: 8px 15px;
-    border-radius: 20px; cursor: pointer; z-index: 100;
+    border-radius: 20px; cursor: pointer; z-index: 1000;
     font-weight: bold; transition: all 0.3s;
 }
 .back-btn:hover { background: var(--dark-leather); color: var(--primary-pink); }
@@ -116,7 +121,7 @@ a:hover {
 
 /* --- Game Screen --- */
 .game-container {
-    max-width: 600px; margin: 60px auto; padding: 30px 20px; background: var(--card-bg);
+    max-width: 600px; margin: 0 auto 40px auto; padding: 30px 20px; background: var(--card-bg);
     border-radius: 20px; text-align: center; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
     width: 90%; color: var(--text-light);
 }
@@ -172,14 +177,13 @@ a:hover {
 .app-container { 
     display: flex; 
     flex-direction: column; 
-    width: 100vw; 
-    padding: 10px 15px; 
+    width: 100%; 
+    padding: 0 15px 30px 15px; 
     box-sizing: border-box; 
     align-items: center; 
     justify-content: center; 
     flex: 1; 
-    min-height: calc(100vh - 60px); /* Changed to min-height so it expands on demand */
-    margin-top: 60px; 
+    min-height: 0; 
 }
 
 .layout { 
@@ -190,7 +194,8 @@ a:hover {
     align-items: center; 
     width: 100%; 
     max-width: 1200px; 
-    min-height: 100%; /* Changed to min-height */
+    height: 100%; 
+    min-height: 0; 
 }
 
 .camera-section { 
@@ -198,20 +203,30 @@ a:hover {
     flex-direction: column; 
     align-items: center; 
     gap: 15px; 
-    flex: 1.2; 
+    flex: 1; /* Balanced flex to give the canvas more horizontal space */
     width: 100%; 
     height: 100%; 
     min-height: 0; 
     justify-content: center;
 }
 
+/* Ensure the header elements stay nicely grouped */
+.camera-section header h1 {
+    white-space: nowrap; 
+}
+.camera-section header h1 img {
+    flex-shrink: 0; 
+}
+
 .preview-section { 
-    flex: 0.8; 
+    flex: 1; 
     height: 100%; 
     min-height: 0; 
     display: flex; 
-    justify-content: center; 
+    flex-direction: column; 
+    justify-content: flex-start; /* Aligns canvas and sticker tray tightly */
     align-items: center;
+    gap: 10px; 
 }
 
 .video-wrapper { position: relative; width: 100%; aspect-ratio: 900 / 453; background: #000; border-radius: 12px; overflow: hidden; border: 6px solid var(--dark-leather); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
@@ -248,9 +263,12 @@ a:hover {
 @keyframes snapSlide { 0% { transform: scale(1) translateX(0); opacity: 1; } 100% { transform: scale(0.3) translateY(100%); opacity: 0; } }
 
 .operator-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+
 #result-canvas { 
     max-width: 100%;
-    max-height: 100%;
+    max-height: calc(100% - 80px); /* Keeps it from completely squishing the tray */
+    min-height: 0; 
+    flex: 1 1 auto; 
     width: auto; 
     height: auto; 
     object-fit: contain; 
@@ -266,50 +284,53 @@ a:hover {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin-top: 15px;
+    margin-top: 0; 
+    flex-shrink: 0;
 }
 
 .sticker-header {
     color: var(--primary-pink);
     font-weight: bold;
-    font-size: 1.3rem;
+    font-size: 1.1rem; 
     align-self: center;
-    margin-bottom: 15px;
+    margin-bottom: 8px; 
     text-align: center;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
 .sticker-tray {
     display: flex;
-    gap: 15px;
+    gap: 12px; /* Set a clean gap */
     justify-content: center;
     align-items: center;
     flex-wrap: nowrap;
     background: var(--card-bg);
     border: 2px solid rgba(234, 140, 166, 0.25);
-    border-radius: 24px;
-    padding: 20px 25px;
-    width: 100%;
-    max-width: 700px; 
+    border-radius: 18px; 
+    padding: 10px 15px; 
+    width: fit-content; /* This tightly hugs the stickers, removing extra desktop space */
+    max-width: 100%; 
     margin: 0 auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     box-sizing: border-box;
 }
 
 .sticker-btn { 
-    font-size: 2rem; 
+    font-size: 1.5rem; 
     background: rgba(255,255,255,0.1); 
     border: 2px solid transparent; 
     border-radius: 50%; 
-    flex: 0 1 60px;
-    height: 60px;
-    width: 60px;
+    flex: 0 1 45px; 
+    height: 45px; 
+    width: 45px; 
+    max-height: 45px;
+    max-width: 45px;
     cursor: pointer; 
     transition: transform 0.2s, border-color 0.2s; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    padding-bottom: 4px;
+    padding-bottom: 2px;
     box-sizing: border-box; 
 }
 .sticker-btn:hover { 
@@ -384,8 +405,10 @@ a:hover {
 
 /* --- Responsive Mobile Layout Adjustments --- */
 @media (max-width: 768px) {
-    /* Base screen overrides are removed. The base classes now perfectly handle 
-       the scroll locking and unlocking inherently! */
+    /* Release scrolling on mobile */
+    #photobooth-screen.active {
+        overflow-y: auto !important; 
+    }
 
     h1 { font-size: 2.2rem; }
     .hero-container h1 img { height: 45px !important; }
@@ -397,39 +420,43 @@ a:hover {
     .menu-card p { font-size: 0.85rem; }
 
     .back-btn {
-        top: max(20px, env(safe-area-inset-top, 20px));
-        left: 15px;
-        z-index: 999;
+        margin: max(25px, env(safe-area-inset-top, 25px)) 0 25px 20px !important;
     }
 
     .game-container {
-        margin-top: max(80px, env(safe-area-inset-top, 20px) + 60px); 
+        margin-top: 0px; 
     }
 
-    /* Fix: Let the App Container expand to its content height naturally inside the scrollable wrapper */
     .app-container { 
         height: auto; 
-        min-height: calc(100vh - 60px);
+        display: flex;
+        flex-direction: column;
         justify-content: flex-start;
-        padding-bottom: 60px; /* Space for the bottom tray */
-        padding-top: max(80px, env(safe-area-inset-top, 20px) + 60px);
+        padding: 0 15px 60px 15px !important; 
+        flex: none; 
     }
 
     .layout { 
         display: flex; 
         flex-direction: column; 
         height: auto; 
-        padding-bottom: 10px; 
-        gap: 0; 
+        gap: 20px; 
     }
     
-    .camera-section, .operator-panel { 
-        display: contents; 
+    .camera-section { 
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: auto; 
     }
 
-    /* 1. Header */
+    .operator-panel { 
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
     .camera-section > header {
-        order: 1;
         width: 100%;
         margin-bottom: 15px;
     }
@@ -446,27 +473,20 @@ a:hover {
 
     .camera-section header .subtitle { display: none; } 
 
-    /* 2. Camera */
     #video-wrapper {
-        order: 2;
         width: 100%;
         max-width: 500px;
         margin: 0 auto 20px auto;
-        flex-shrink: 0;
         min-height: 180px; 
     }
 
-    /* 3. Controls (Buttons) */
     .button-group {
-        order: 3;
+        display: flex;
         flex-direction: row; 
         justify-content: center;
-        align-items: center;
         width: 100%;
         gap: 10px; 
         margin-bottom: 20px;
-        padding: 0 15px; 
-        box-sizing: border-box;
     }
 
     .button-group .fan-btn {
@@ -477,24 +497,19 @@ a:hover {
         font-size: 1rem; 
     }
     
-    /* 4. Photobooth Strip Canvas */
     .preview-section {
-        order: 4;
         width: 100%;
+        height: auto; 
         margin-bottom: 25px;
-        flex: none; 
+        gap: 15px; 
     }
 
     #result-canvas {
-        max-height: 60vh; 
-        max-width: 90vw;
+        max-height: 75vh; 
+        max-width: 95vw; 
+        width: 100%; 
         margin: 0 auto;
         display: block;
-    }
-
-    /* 5. Sticker Menu & Tray */
-    #sticker-menu {
-        order: 5;
     }
 
     #countdown-display { font-size: 5rem; }
@@ -505,24 +520,25 @@ a:hover {
     }
 
     .sticker-tray {
-        flex-wrap: nowrap;
-        width: calc(100vw - 30px); 
-        padding: 12px;
-        gap: 8px; 
+        width: fit-content; 
+        max-width: calc(100vw - 20px); 
+        padding: 8px 10px; 
+        gap: 6px; 
         margin: 0 auto;
-        border-radius: 16px;
+        border-radius: 12px;
         justify-content: space-evenly; 
     }
     
     .sticker-header {
-        font-size: 1.1rem;
+        font-size: 1rem;
+        margin-bottom: 5px;
     }
     
     .sticker-btn { 
-        flex-shrink: 1; 
-        width: 12vw; 
-        height: 12vw;
-        max-width: 55px; 
-        max-height: 55px;
+        flex: 1 1 auto; 
+        width: 40px; 
+        height: 40px;
+        max-width: 40px; 
+        max-height: 40px;
     }
 }

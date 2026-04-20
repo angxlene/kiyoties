@@ -643,7 +643,7 @@ async function captureSingleFrame(index) {
 }
 
 startBtn.addEventListener('click', async () => {
-    if (startBtn.innerText === "🔄 Retake All") {
+    if (capturedFrames[0] !== null) {
         capturedFrames = [null, null, null];
         activeStickers = [];
         updateStickerControls();
@@ -651,6 +651,7 @@ startBtn.addEventListener('click', async () => {
     }
 
     startBtn.disabled = true; 
+    startBtn.innerText = "📸 Capturing...";
     saveBtn.style.display = 'none'; 
     stickerMenu.style.display = 'none';
     startBtn.classList.remove('secondary'); 
@@ -660,7 +661,11 @@ startBtn.addEventListener('click', async () => {
     for (let i = 0; i < 3; i++) {
         if(!capturedFrames[i]) {
             let success = await captureSingleFrame(i);
-            if (!success) { startBtn.disabled = false; return; }
+            if (!success) { 
+                startBtn.disabled = false; 
+                startBtn.innerText = "📸 Start"; 
+                return; 
+            }
         }
     }
 

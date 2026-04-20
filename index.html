@@ -17,7 +17,7 @@
 
     <div id="home-screen" class="screen active">
         <div class="hero-container">
-            <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: nowrap; white-space: nowrap;">
                 <span>Kiyoties</span>
                 <img src="kiyo_sticker_1.png" alt="Kiyo" style="height: 60px; width: auto; object-fit: contain;">
             </h1>
@@ -117,7 +117,7 @@
             <div class="layout">
                 <div class="camera-section">
                     <header>
-                    <h1 style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <h1 style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: nowrap; white-space: nowrap;">
                         <span>Kiyotie Photobooth</span>
                         <img src="kiyo_sticker_2.png" alt="Kiyo" style="height: 50px; width: auto; object-fit: contain;">
                     </h1>
@@ -143,28 +143,30 @@
                             <button id="start-btn" class="fan-btn">📸 Start</button>
                             <button id="save-btn" class="fan-btn save-action" style="display: none;">💾 Save Photo</button>
                         </div>
-                        <div id="sticker-menu" class="sticker-menu-container" style="display: none;">
-                            <div id="sticker-edit-controls" style="width: 100%; display: none; justify-content: center; gap: 10px; margin-bottom: 10px;">
-                                <button id="undo-sticker-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">↩️ Undo Last</button>
-                                <button id="clear-stickers-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">🗑️ Clear All</button>
-                            </div>
-
-                            <div class="sticker-header">✨ Add Kiyo Stickers! (Drag & Drop) ✨</div>
-                            
-                            <div class="sticker-tray">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_1.png" alt="Kiyo">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_2.png" alt="Kiyo">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_3.png" alt="Kiyo">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_4.png" alt="Kiyo">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_5.png" alt="Kiyo">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_6.png" alt="Kiyo">
-                                <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_7.png" alt="Kiyo">
-                            </div>
-                        </div>
                     </div>
                 </div>
+
                 <div class="preview-section">
                     <canvas id="result-canvas" width="1080" height="1920"></canvas>
+                    
+                    <div id="sticker-menu" class="sticker-menu-container" style="display: none;">
+                        <div id="sticker-edit-controls" style="width: 100%; display: none; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                            <button id="undo-sticker-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">↩️ Undo Last</button>
+                            <button id="clear-stickers-btn" class="fan-btn secondary" style="padding: 6px 15px; font-size: 0.9rem;">🗑️ Clear All</button>
+                        </div>
+
+                        <div class="sticker-header">✨ Add Kiyo Stickers! ✨</div>
+                        
+                        <div class="sticker-tray">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_1.png" alt="Kiyo">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_2.png" alt="Kiyo">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_3.png" alt="Kiyo">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_4.png" alt="Kiyo">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_5.png" alt="Kiyo">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_6.png" alt="Kiyo">
+                            <img class="sticker-btn img-sticker" crossorigin="anonymous" src="kiyo_sticker_7.png" alt="Kiyo">
+                        </div>
+                    </div>
                 </div>
             </div>
             <img id="frame" crossorigin="anonymous" src="kiyo_frame.png" style="display: none;" alt="Frame">
