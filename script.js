@@ -190,7 +190,12 @@ startBtnGame.addEventListener('click', () => {
 
 confirmStartBtn.addEventListener('click', () => {
     const input = document.getElementById('player-name-input');
-    if(!input.value.trim()) return alert("Enter fan name!");
+    if(!input.value.trim()) return alert("Please enter a Fan Name first!");
+
+    // Adding the "One Try" dialogue check to double down on the rule playfully
+    const isReady = confirm(`Hey ${input.value.trim()}! Just a quick reminder: You only get ONE attempt per device. No do-overs. Ready to play?`);
+    if (!isReady) return;
+
     playerName = input.value.trim();
     localStorage.setItem('kiyotiePlayed', "true"); 
     backToHubBtn.style.display = 'none'; 

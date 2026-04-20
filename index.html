@@ -33,7 +33,7 @@
                 <button id="nav-game" class="menu-card game-card">
                     <span class="emoji">⏱️</span>
                     <h2>Ultimate Fan Challenge</h2>
-                    <p>Guess all <span id="ui-total-1"></span> Kiyo tracks. One try per device!</p>
+                    <p>Guess all <span id="ui-total-1"></span> Kiyo tracks. <strong>One attempt per device!</strong></p>
                 </button>
             </div>
             
@@ -58,8 +58,8 @@
                     <ul id="leaderboard-list"></ul>
                 </div>
 
-                <div id="already-played-msg" style="display:none; color: var(--primary-pink); font-weight:bold; margin: 15px 0; font-size: 1.2rem;">
-                    🔒 You have already played your attempt!
+                <div id="already-played-msg" style="display:none; color: var(--primary-pink); font-weight:bold; margin: 15px 0; font-size: 1.1rem; line-height: 1.4;">
+                    🔒 You've already taken your one attempt!<br>Check out the leaderboard to see your rank. 🏆
                 </div>
                 <button id="start-game-btn" class="fan-btn pulse">▶️ Play Challenge</button>
             </div>
@@ -71,10 +71,12 @@
                     <li><strong>Step 2:</strong> The audio stops! You have <strong>10 seconds</strong> to type.</li>
                     <li><strong>Step 3:</strong> Correct = typing time. Wrong/Timeout = <strong>10s penalty</strong>.</li>
                     <li>Punctuation is ignored, but spelling matters!</li>
-                    <li style="color: var(--primary-pink); font-weight:bold;">🚫 ANTI-CHEAT: One attempt only. If you refresh or exit, you lose your turn!</li>
+                    <li style="color: var(--primary-pink); font-weight:bold; background: rgba(234, 140, 166, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid var(--primary-pink); margin-top: 15px; font-size: 0.95rem; line-height: 1.4; list-style: none;">
+                        ✨ <strong>THE GOLDEN RULE:</strong> You only get <strong>ONE</strong> attempt per device! No do-overs, no refreshing. Give it your best attempt! 🍀
+                    </li>
                 </ul>
-                <input type="text" id="player-name-input" placeholder="Enter Fan Name (Final!)" maxlength="15" autocomplete="off" spellcheck="false">
-                <button id="confirm-start-btn" class="fan-btn pulse">Lock In & Start</button>
+                <input type="text" id="player-name-input" placeholder="Enter Fan Name (Final!)" maxlength="15" autocomplete="off" spellcheck="false" style="margin-top: 10px;">
+                <button id="confirm-start-btn" class="fan-btn pulse">Lock In My 1 Try & Play!</button>
             </div>
 
             <div id="game-play-panel" style="display: none;">
