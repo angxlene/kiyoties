@@ -136,6 +136,19 @@ a:hover {
 }
 
 .instructions-list { text-align: left; color: var(--text-light); font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px;}
+.golden-rule-box {
+    color: var(--primary-pink);
+    font-weight: bold;
+    background: rgba(234, 140, 166, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-pink);
+    margin-top: 15px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    text-align: left;
+}
 
 /* Inputs */
 #song-guess-input, #player-name-input {
@@ -229,7 +242,17 @@ a:hover {
     gap: 10px; 
 }
 
-.video-wrapper { position: relative; width: 100%; aspect-ratio: 900 / 453; background: #000; border-radius: 12px; overflow: hidden; border: 6px solid var(--dark-leather); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.video-wrapper { 
+    position: relative; 
+    width: 100%; 
+    /* THIS ENSURES EXACT 1:1 RATIO WITH THE JS CAPTURE! */
+    aspect-ratio: 920 / 473; 
+    background: #000; 
+    border-radius: 12px; 
+    overflow: hidden; 
+    border: 6px solid var(--dark-leather); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+}
 .idle-border { animation: borderBreathe 4s infinite alternate; }
 @keyframes borderBreathe { 0% { border-color: var(--dark-leather); box-shadow: 0 10px 30px rgba(0,0,0,0.2); } 100% { border-color: var(--primary-pink); box-shadow: 0 10px 40px rgba(234, 140, 166, 0.4); } }
 
@@ -423,10 +446,69 @@ a:hover {
         margin: max(25px, env(safe-area-inset-top, 25px)) 0 25px 20px !important;
     }
 
+    /* -------------------------------------
+       GAME SCREEN MOBILE FIXES
+       ------------------------------------- */
     .game-container {
-        margin-top: 0px; 
+        padding: 20px 15px; /* Deepened slightly to keep internal proportions balanced */
+        width: 85%; /* Much slimmer horizontally */
+        max-width: 380px; /* Hard cap so it doesn't stretch awkwardly on larger phones */
+        border-radius: 16px;
+        margin: 10px auto 30px auto; /* Centers the box with breathing room on top and bottom */
     }
 
+    /* Force the header onto one line and scale it based on screen width */
+    .game-container h1 { 
+        font-size: clamp(1.1rem, 6vw, 1.4rem); 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        white-space: nowrap; /* Prevents wrapping */
+        margin-bottom: 5px;
+    }
+    
+    .game-container .subtitle { font-size: 0.85rem; }
+
+    /* Shrink the instructions content so it feels less magnified */
+    #instructions-panel h2 { font-size: 1.3rem; margin: 10px 0; }
+    
+    .instructions-list { 
+        font-size: 0.85rem; /* Down from 0.95rem */
+        line-height: 1.4;
+        margin-bottom: 15px; 
+    }
+    
+    .instructions-list li { margin-bottom: 8px; }
+    
+    /* Shrink the Golden Rule box for mobile */
+    .golden-rule-box {
+        padding: 10px;
+        font-size: 0.8rem;
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+
+    #song-guess-input, #player-name-input { 
+        font-size: 0.95rem; 
+        padding: 10px; 
+        margin-bottom: 15px; 
+    }
+    
+    .score-board, .time-board { font-size: 0.9rem; margin: 0 10px; }
+    #current-score, #total-time-display { font-size: 1.1rem; }
+    .leaderboard-section { padding: 12px; margin-top: 20px; }
+    .leaderboard-section h3 { font-size: 1rem; }
+    #leaderboard-list li { font-size: 0.85rem; padding: 8px 0; }
+    .audio-visualizer { height: 25px; margin: 10px 0; }
+    #feedback-display { font-size: 1rem !important; }
+    #game-over-panel h2 { font-size: 1.3rem; }
+    #final-score { font-size: 1.2rem !important; }
+    .fan-btn { padding: 10px 15px; font-size: 0.9rem; }
+
+    /* -------------------------------------
+       PHOTOBOOTH SCREEN MOBILE FIXES
+       ------------------------------------- */
     .app-container { 
         height: auto; 
         display: flex;
@@ -477,7 +559,8 @@ a:hover {
         width: 100%;
         max-width: 500px;
         margin: 0 auto 20px auto;
-        min-height: 180px; 
+        /* Removed the min-height so the ratio dictates the size accurately */
+        aspect-ratio: 920 / 473;
     }
 
     .button-group {

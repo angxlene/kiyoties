@@ -67,14 +67,16 @@
             <div id="instructions-panel" style="display:none;">
                 <h2 style="color: var(--primary-pink);">How to Play 🎸</h2>
                 <ul class="instructions-list">
-                    <li><strong>Step 1:</strong> You will hear a <strong>3-second intro</strong> (20s into the song).</li>
+                    <li><strong>Step 1:</strong> You will hear a <strong>3-second snippet</strong> from a random part of the song.</li>
                     <li><strong>Step 2:</strong> The audio stops! You have <strong>10 seconds</strong> to type.</li>
                     <li><strong>Step 3:</strong> Correct = typing time. Wrong/Timeout = <strong>10s penalty</strong>.</li>
                     <li>Punctuation is ignored, but spelling matters!</li>
-                    <li style="color: var(--primary-pink); font-weight:bold; background: rgba(234, 140, 166, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid var(--primary-pink); margin-top: 15px; font-size: 0.95rem; line-height: 1.4; list-style: none;">
-                        ✨ <strong>THE GOLDEN RULE:</strong> You only get <strong>ONE</strong> attempt per device! No do-overs, no refreshing. Give it your best attempt! 🍀
-                    </li>
                 </ul>
+                
+                <div class="golden-rule-box">
+                    ✨ <strong>THE GOLDEN RULE:</strong> You only get <strong>ONE</strong> attempt per device! No do-overs, no refreshing. Give it your best attempt! 🍀
+                </div>
+
                 <input type="text" id="player-name-input" placeholder="Enter Fan Name (Final!)" maxlength="15" autocomplete="off" spellcheck="false" style="margin-top: 10px;">
                 <button id="confirm-start-btn" class="fan-btn pulse">Lock In My 1 Try & Play!</button>
             </div>
