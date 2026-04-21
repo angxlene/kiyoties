@@ -18,6 +18,7 @@ const db = getFirestore(app);
 // ==========================================
 // --- GLOBAL DATA & SETUP ---
 // ==========================================
+// Added 'aliases' array to specific songs for flexible answering
 const kiyoSongs = [
     { id: 1, title: "Urong Sulong", src: "audio/urong_sulong.mp3" },
     { id: 2, title: "Eba", src: "audio/eba.mp3" },
@@ -26,13 +27,13 @@ const kiyoSongs = [
     { id: 5, title: "Hey", src: "audio/hey.mp3" },
     { id: 6, title: "Puyat", src: "audio/puyat.mp3" },
     { id: 7, title: "Pambihira", src: "audio/pambihira.mp3" },
-    { id: 8, title: "Comeback", src: "audio/comeback.mp3" },
+    { id: 8, title: "Comeback", aliases: ["Comeback (Pabalik sa'yo)", "Comeback Pabalik sayo"], src: "audio/comeback.mp3" },
     { id: 9, title: "Ikaw Lang", src: "audio/ikaw_lang.mp3" },
     { id: 10, title: "Padayon", src: "audio/padayon.mp3" },
     { id: 11, title: "TULO LAWAY", src: "audio/tulo_laway.mp3" },
     { id: 12, title: "Okay lang yan", src: "audio/okay_lang_yan.mp3" },
     { id: 13, title: "HANAP", src: "audio/hanap.mp3" },
-    { id: 14, title: "Eroplanong Papel", src: "audio/eroplanong_papel.mp3" },
+    { id: 14, title: "Eroplanong Papel", aliases: ["Eroplanong Papel (Abot tanaw)"], src: "audio/eroplanong_papel.mp3" },
     { id: 15, title: "SHINEBOI", src: "audio/shineboi.mp3" },
     { id: 16, title: "not even her", src: "audio/not_even_her.mp3" },
     { id: 17, title: "Hanggang Kailan", src: "audio/hanggang_kailan.mp3" },
@@ -196,7 +197,6 @@ function checkDevicePlayedStatus() {
 }
 
 viewScoreboardBtn.addEventListener('click', () => {
-    // Restore variables and show Game Over panel so they can access the scorecard
     currentScore = parseInt(localStorage.getItem('kiyotieScore')) || 0;
     totalTimeMs = parseInt(localStorage.getItem('kiyotieTime')) || 0;
     playerName = localStorage.getItem('kiyotieName') || "Kiyotie";
@@ -207,7 +207,6 @@ viewScoreboardBtn.addEventListener('click', () => {
     document.getElementById('game-start-panel').style.display = 'none';
     document.getElementById('game-over-panel').style.display = 'block';
     
-    // Show the top-left back button so they can leave!
     backToHubBtn.style.display = 'inline-flex'; 
 });
 
@@ -225,7 +224,6 @@ confirmStartBtn.addEventListener('click', () => {
     if (!isReady) return;
 
     playerName = input.value.trim();
-    // Save initial anti-cheat variables
     localStorage.setItem('kiyotiePlayed', "true"); 
     localStorage.setItem('kiyotieScore', "0");
     localStorage.setItem('kiyotieTime', "0");
@@ -309,15 +307,34 @@ function processGuess(isTimeout) {
     const btn = document.getElementById('submit-guess-btn');
     if (btn.disabled) return;
     btn.disabled = true;
-    document.getElementById('song-guess-input').disabled = true;
+    
+    const inputField = document.getElementById('song-guess-input');
+    inputField.disabled = true;
     clearTimeout(timerInterval);
 
     let elapsed = Math.min(10000, Date.now() - roundStartTime);
     const song = randomizedPlaylist[currentQuestionIndex];
     
-    const userGuess = normalizeString(document.getElementById('song-guess-input').value);
+    const rawGuess = inputField.value.trim();
+    const userGuess = normalizeString(rawGuess);
     const correctTitle = normalizeString(song.title);
-    const isCorrect = !isTimeout && userGuess === correctTitle;
+    
+    // UI Feedback Update: Replace "Type the title!"
+    if (isTimeout) {
+        document.getElementById('question-text').innerText = "⏳ Time's up!";
+    } else {
+        document.getElementById('question-text').innerText = rawGuess ? `You entered: "${rawGuess}"` : "No answer submitted!";
+    }
+
+    // Flexible Answer Checking
+    let isCorrect = false;
+    if (!isTimeout) {
+        if (userGuess === correctTitle) {
+            isCorrect = true;
+        } else if (song.aliases) {
+            isCorrect = song.aliases.some(alias => normalizeString(alias) === userGuess);
+        }
+    }
 
     const feedback = document.getElementById('feedback-display');
     feedback.style.display = 'block';
@@ -364,14 +381,12 @@ async function endGame() {
     document.getElementById('game-over-panel').style.display = 'block';
     document.getElementById('leaderboard-container').style.display = 'block';
     
-    // Show the top-left back button!
     backToHubBtn.style.display = 'inline-flex'; 
     
     const finalSecs = (totalTimeMs/1000).toFixed(2);
     document.getElementById('final-score').innerText = currentScore;
     document.getElementById('final-time').innerText = finalSecs;
 
-    // Save final actual results locally so they can view it anytime
     localStorage.setItem('kiyotiePlayed', "true");
     localStorage.setItem('kiyotieScore', currentScore);
     localStorage.setItem('kiyotieTime', totalTimeMs);
@@ -478,7 +493,7 @@ function generateScorecard() {
 
     let rank = "TRUE KIYOTIE";
     if(currentScore <= 5) rank = "CASUAL LISTENER";
-    if(currentScore === TOTAL_SONGS) rank = "ULTIMATE SUPERFAN";
+    if(currentScore === TOTAL_SONGS) rank = "ULTIMATE KIYOTIE";
 
     ctx.fillStyle = pink;
     ctx.beginPath();
