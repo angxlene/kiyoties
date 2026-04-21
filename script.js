@@ -116,6 +116,15 @@ document.querySelectorAll('.nav-home').forEach(btn => {
         gameAudio.pause(); gameAudio.currentTime = 0;
         clearTimeout(gameFlowTimeout);
         clearTimeout(timerInterval);
+        
+        // Reset Game UI to default
+        document.getElementById('game-start-panel').style.display = 'block';
+        document.getElementById('instructions-panel').style.display = 'none';
+        document.getElementById('game-play-panel').style.display = 'none';
+        document.getElementById('game-over-panel').style.display = 'none';
+        document.getElementById('leaderboard-container').style.display = 'block';
+        document.getElementById('back-to-hub').style.display = 'inline-flex';
+        checkDevicePlayedStatus();
     });
 });
 
@@ -185,6 +194,7 @@ function checkDevicePlayedStatus() {
 
 startBtnGame.addEventListener('click', () => {
     document.getElementById('game-start-panel').style.display = 'none';
+    document.getElementById('leaderboard-container').style.display = 'none';
     document.getElementById('instructions-panel').style.display = 'block';
 });
 
@@ -224,10 +234,9 @@ function playRound() {
     
     document.getElementById('guessing-area').style.display = 'none';
     document.getElementById('feedback-display').style.display = 'none';
-    document.getElementById('question-text').innerText = `⏳ Loading audio...`; // Changed to show loading state
+    document.getElementById('question-text').innerText = `⏳ Loading audio...`;
     document.getElementById('song-guess-input').value = "";
     
-    // Dim the visualizer and freeze the timer while loading
     document.getElementById('visualizer').style.opacity = '0.1';
     timerFill.style.transition = 'none';
     timerFill.style.transform = 'scaleX(1)';
@@ -235,11 +244,10 @@ function playRound() {
     gameAudio.src = song.src;
     gameAudio.currentTime = SKIP_INTRO_SECONDS;
 
-    // WAIT for audio to successfully play before moving the bar
     gameAudio.play().then(() => {
         document.getElementById('visualizer').style.opacity = '1';
         document.getElementById('question-text').innerText = `🎵 Track ${currentQuestionIndex + 1}/${TOTAL_SONGS}`;
-        runTimerBar(3); // Start timer exactly as audio starts
+        runTimerBar(3); 
         
         gameFlowTimeout = setTimeout(() => {
             gameAudio.pause();
@@ -307,11 +315,9 @@ function processGuess(isTimeout) {
     document.getElementById('current-score').innerText = currentScore;
     document.getElementById('total-time-display').innerText = (totalTimeMs/1000).toFixed(2);
     
-    // Freeze timer visually while we resume audio
     timerFill.style.transition = 'none';
     timerFill.style.transform = 'scaleX(1)';
     
-    // Wait for the song to resume before starting the 10-second transition to next song
     gameAudio.play().then(() => {
         document.getElementById('visualizer').style.opacity = '1';
         runTimerBar(10);
@@ -321,7 +327,7 @@ function processGuess(isTimeout) {
         }, 10000);
     }).catch(e => {
         console.warn(e);
-        runTimerBar(10); // Fallback if audio fails
+        runTimerBar(10); 
         gameFlowTimeout = setTimeout(() => {
             currentQuestionIndex++;
             playRound();
@@ -330,9 +336,10 @@ function processGuess(isTimeout) {
 }
 
 async function endGame() {
-    backToHubBtn.style.display = 'block';
+    // We intentionally keep backToHubBtn hidden here to avoid overlapping with the bottom "Return to Hub"
     document.getElementById('game-play-panel').style.display = 'none';
     document.getElementById('game-over-panel').style.display = 'block';
+    document.getElementById('leaderboard-container').style.display = 'block';
     
     const finalSecs = (totalTimeMs/1000).toFixed(2);
     document.getElementById('final-score').innerText = currentScore;
@@ -553,7 +560,7 @@ let activeStickers = [];
 let draggingSticker = null;
 let dragOffsetX = 0, dragOffsetY = 0;
 let previousTouchAngle = null; 
-let previousTouchDistance = null; // Used for multi-touch pinch to zoom
+let previousTouchDistance = null; 
 
 function getFilename() { return `Kiyotie-Photostrip-${String(photoCounter).padStart(3, '0')}.png`; }
 

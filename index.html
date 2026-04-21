@@ -53,15 +53,10 @@
             </header>
 
             <div id="game-start-panel">
-                <div class="leaderboard-section">
-                    <h3>🏆 Kiyoties Leaderboard</h3>
-                    <ul id="leaderboard-list"></ul>
-                </div>
-
                 <div id="already-played-msg" style="display:none; color: var(--primary-pink); font-weight:bold; margin: 15px 0; font-size: 1.1rem; line-height: 1.4;">
-                    🔒 You've already taken your one attempt!<br>Check out the leaderboard to see your rank. 🏆
+                    🔒 You've already taken your one attempt!<br>Check out the leaderboard below to see your rank. 🏆
                 </div>
-                <button id="start-game-btn" class="fan-btn pulse">▶️ Play Challenge</button>
+                <button id="start-game-btn" class="fan-btn pulse" style="margin-top: 15px;">▶️ Play Challenge</button>
             </div>
 
             <div id="instructions-panel" style="display:none;">
@@ -101,16 +96,22 @@
                 <h2>Challenge Complete! 🎤</h2>
                 <p>Correct Answers: <span id="final-score" style="color: var(--primary-pink); font-weight:bold; font-size: 1.5rem;">0</span>/<span id="ui-total-3"></span></p>
                 <p>Total Guess Time: <span id="final-time" style="color: var(--accent-silver); font-weight:bold;">0.00</span>s</p>
-                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+                
+                <div class="button-group" style="margin-top: 25px;">
                     <button id="download-scorecard-btn" class="fan-btn">📲 Share Scorecard</button>
                     <button id="return-hub-btn" class="fan-btn secondary nav-home">Return to Hub</button>
                 </div>
+
                 <div id="scorecard-modal" class="modal">
                     <span class="close-modal">&times;</span>
                     <canvas id="scorecard-canvas" width="1080" height="1920" style="max-height: 80vh; max-width: 90vw; border: 5px solid var(--primary-pink); border-radius: 20px;"></canvas>
-                    <p style="color:white; margin-top:10px;">Long press or click Save to keep it!</p>
-                    <button id="save-scorecard-final" class="fan-btn" style="margin-top:10px;">💾 Save Image</button>
+                    <button id="save-scorecard-final" class="fan-btn" style="margin-top:15px;">💾 Save Image</button>
                 </div>
+            </div>
+
+            <div id="leaderboard-container" class="leaderboard-section">
+                <h3>🏆 Kiyoties Leaderboard</h3>
+                <ul id="leaderboard-list"></ul>
             </div>
         </div>
     </div>
@@ -173,8 +174,8 @@
                     </div>
                 </div>
             </div>
-            <img id="frame" crossorigin="anonymous" src="kiyo_frame.png" style="display: none;" alt="Frame">
         </div>
+        <img id="frame" crossorigin="anonymous" src="kiyo_frame.png" style="display: none;" alt="Frame">
     </div>
 
     <script type="module" src="script.js"></script>
