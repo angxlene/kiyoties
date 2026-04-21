@@ -135,6 +135,7 @@ let currentScore = 0, totalTimeMs = 0, currentQuestionIndex = 0, randomizedPlayl
 let gameFlowTimeout, timerInterval, roundStartTime = 0;
 
 const startBtnGame = document.getElementById('start-game-btn');
+const viewScoreboardBtn = document.getElementById('view-scoreboard-btn');
 const confirmStartBtn = document.getElementById('confirm-start-btn');
 const backToHubBtn = document.getElementById('back-to-hub');
 const leaderboardList = document.getElementById('leaderboard-list');
@@ -186,11 +187,29 @@ function checkDevicePlayedStatus() {
     if (hasPlayed === "true") {
         document.getElementById('already-played-msg').style.display = 'block';
         startBtnGame.style.display = 'none';
+        viewScoreboardBtn.style.display = 'inline-block';
     } else {
         document.getElementById('already-played-msg').style.display = 'none';
         startBtnGame.style.display = 'inline-block';
+        viewScoreboardBtn.style.display = 'none';
     }
 }
+
+viewScoreboardBtn.addEventListener('click', () => {
+    // Restore variables and show Game Over panel so they can access the scorecard
+    currentScore = parseInt(localStorage.getItem('kiyotieScore')) || 0;
+    totalTimeMs = parseInt(localStorage.getItem('kiyotieTime')) || 0;
+    playerName = localStorage.getItem('kiyotieName') || "Kiyotie";
+
+    document.getElementById('final-score').innerText = currentScore;
+    document.getElementById('final-time').innerText = (totalTimeMs/1000).toFixed(2);
+
+    document.getElementById('game-start-panel').style.display = 'none';
+    document.getElementById('game-over-panel').style.display = 'block';
+    
+    // Show the top-left back button so they can leave!
+    backToHubBtn.style.display = 'inline-flex'; 
+});
 
 startBtnGame.addEventListener('click', () => {
     document.getElementById('game-start-panel').style.display = 'none';
@@ -206,7 +225,12 @@ confirmStartBtn.addEventListener('click', () => {
     if (!isReady) return;
 
     playerName = input.value.trim();
+    // Save initial anti-cheat variables
     localStorage.setItem('kiyotiePlayed', "true"); 
+    localStorage.setItem('kiyotieScore', "0");
+    localStorage.setItem('kiyotieTime', "0");
+    localStorage.setItem('kiyotieName', playerName);
+
     backToHubBtn.style.display = 'none'; 
     document.getElementById('instructions-panel').style.display = 'none';
     startGame();
@@ -336,14 +360,21 @@ function processGuess(isTimeout) {
 }
 
 async function endGame() {
-    // We intentionally keep backToHubBtn hidden here to avoid overlapping with the bottom "Return to Hub"
     document.getElementById('game-play-panel').style.display = 'none';
     document.getElementById('game-over-panel').style.display = 'block';
     document.getElementById('leaderboard-container').style.display = 'block';
     
+    // Show the top-left back button!
+    backToHubBtn.style.display = 'inline-flex'; 
+    
     const finalSecs = (totalTimeMs/1000).toFixed(2);
     document.getElementById('final-score').innerText = currentScore;
     document.getElementById('final-time').innerText = finalSecs;
+
+    // Save final actual results locally so they can view it anytime
+    localStorage.setItem('kiyotiePlayed', "true");
+    localStorage.setItem('kiyotieScore', currentScore);
+    localStorage.setItem('kiyotieTime', totalTimeMs);
 
     try {
         const safeDocId = playerName.replace(/\//g, '_'); 

@@ -77,15 +77,26 @@ a:hover {
 .back-btn {
     position: relative !important; 
     display: inline-flex !important;
-    margin: 30px 0 40px 30px !important; 
+    margin: 30px 0 30px 30px !important; 
     align-self: flex-start;
     flex-shrink: 0;
-    background: transparent; color: var(--dark-leather);
-    border: 2px solid var(--dark-leather); padding: 8px 15px;
-    border-radius: 20px; cursor: pointer; z-index: 1000;
-    font-weight: bold; transition: all 0.3s;
+    background: var(--card-bg); 
+    color: var(--primary-pink);
+    border: 2px solid var(--primary-pink); 
+    padding: 10px 20px;
+    border-radius: 30px; 
+    cursor: pointer; 
+    z-index: 10; /* Lowered so it doesn't overlap modals */
+    font-weight: bold; 
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
-.back-btn:hover { background: var(--dark-leather); color: var(--primary-pink); }
+.back-btn:hover { 
+    background: var(--primary-pink); 
+    color: var(--text-light); 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(234, 140, 166, 0.3);
+}
 
 .fan-btn {
     background: var(--primary-pink); color: var(--text-light); border: none;
@@ -384,7 +395,7 @@ a:hover {
 .modal { 
     display: none; 
     position: fixed; 
-    z-index: 100; 
+    z-index: 9999; /* Raised significantly so back-btns do not overlay */
     left: 0; 
     top: 0; 
     width: 100%; 
@@ -450,11 +461,11 @@ a:hover {
        GAME SCREEN MOBILE FIXES
        ------------------------------------- */
     .game-container {
-        padding: 20px 15px; /* Deepened slightly to keep internal proportions balanced */
-        width: 85%; /* Much slimmer horizontally */
-        max-width: 380px; /* Hard cap so it doesn't stretch awkwardly on larger phones */
+        padding: 20px 15px; 
+        width: 85%; 
+        max-width: 380px; 
         border-radius: 16px;
-        margin: 10px auto 30px auto; /* Centers the box with breathing room on top and bottom */
+        margin: 20px auto 40px auto; 
     }
 
     /* Force the header onto one line and scale it based on screen width */
