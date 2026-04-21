@@ -190,7 +190,33 @@ a:hover {
 
 .leaderboard-section { margin-top: 40px; text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;}
 .leaderboard-section h3 { margin-top: 0; color: var(--primary-pink); text-align: center;}
-#leaderboard-list { list-style: none; padding: 0; margin: 0; }
+
+/* SCROLLABLE LEADERBOARD UI */
+#leaderboard-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    max-height: 400px; /* Constrain the height */
+    overflow-y: auto;  /* Enable vertical scrolling */
+    padding-right: 10px; /* Add slight padding so scrollbar doesn't clip text */
+}
+
+/* Scrollbar styling for a polished UI */
+#leaderboard-list::-webkit-scrollbar {
+    width: 8px;
+}
+#leaderboard-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2); 
+    border-radius: 4px;
+}
+#leaderboard-list::-webkit-scrollbar-thumb {
+    background: var(--primary-pink); 
+    border-radius: 4px;
+}
+#leaderboard-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-pink-hover); 
+}
+
 #leaderboard-list li { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; font-weight: bold; align-items: center;}
 .lb-rank { color: var(--primary-pink); width: 30px; display: inline-block; }
 .lb-name { flex-grow: 1; }

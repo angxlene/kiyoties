@@ -165,9 +165,10 @@ function loadLeaderboard() {
             return a.time - b.time; 
         });
 
-        const top10 = entries.slice(0, 10);
+        // Show top 30 for the scrollable UI
+        const topList = entries.slice(0, 30);
 
-        top10.forEach((entry, i) => {
+        topList.forEach((entry, i) => {
             const li = document.createElement('li');
             li.innerHTML = `
                 <span class="lb-rank">#${i+1}</span>
